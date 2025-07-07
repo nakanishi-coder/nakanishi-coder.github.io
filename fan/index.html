@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>扇風機の羽根モデル生成</title>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; }
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .controls label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .controls input[type="number"] {
+      width: 80px;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+</head>
+
+<body>
+  <div class="controls">
+    <details>
+      <summary>羽根の形状設定</summary>
+      <label for="numBlades">羽根の枚数:</label>
+      <input type="number" id="numBlades" value="4"><br>
+  
+      <label for="bladeLength">羽根の長さ:</label>
+      <input type="number" id="bladeLength" value="100"><br>
+  
+      <label for="bladeThickness">羽根の厚さ:</label>
+      <input type="number" id="bladeThickness" value="2"><br>
+  
+      <label for="bladeTopWidth">羽根の先端の幅:</label>
+      <input type="number" id="bladeTopWidth" value="30"><br>
+  
+      <label for="bladeBottomWidth">羽根の根元の幅:</label>
+      <input type="number" id="bladeBottomWidth" value="15"><br>
+  
+      <label for="bladeTiltAngleDeg">羽根の角度:</label>
+      <input type="number" id="bladeTiltAngleDeg" value="75"><br>
+    </details>
+    <br>
+    <details>
+      <summary>ボスの形状設定</summary>
+      <label for="bossDiameter">ボスの直径:</label>
+      <input type="number" id="bossDiameter" value="40"><br>
+  
+      <label for="bossHeight">ボスの高さ:</label>
+      <input type="number" id="bossHeight" value="20"><br>
+  
+      <label for="bossHoleDiameter">ボスの穴の直径:</label>
+      <input type="number" id="bossHoleDiameter" value="2"><br>
+    </details>
+    <br>
+    <button id="updateButton">形状を更新</button><br>
+    <br>
+    <label>
+      <input type="checkbox" id="animationCheckbox"> アニメーション
+    </label>
+    <label>
+      <input type="checkbox" id="gridCheckbox"> グリッド表示
+    </label><br>
+    <button id="exportSTL">STL download</button>
+  </div>
+
+  <script>
+    const scene = new THREE.Scene();
+    const aspectRatio = window.innerWidth / window.innerHeight; // アスペクト比を計算
+    const cameraWidth = 1000;  // カメラの幅を300に設定
+    const cameraHeight = cameraWidth / aspectRatio; // 高さをアスペクト比に基づいて計算
+    const camera = new THREE.OrthographicCamera(
+      cameraWidth / -2, cameraWidth / 2, cameraHeight / 2, cameraHeight / -2, 0.1, 1000);
+
+    // ライトを追加
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
+
+    // 背景色を設定
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0xffffff); // 背景色を白に設定
+    document.body.appendChild(renderer.domElement);
+
+    camera.position.set(0, 600, 0); // カメラを真上から見下ろす位置に設定
+    camera.lookAt(scene.position); // シーンの中心を見るように設定
+
+    // OrbitControlsの初期化
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // smooth rotation
+    controls.dampingFactor = 0.25;
+    controls.enableZoom = true;
+
+    let fan; // 扇風機全体のグループ
+    let animationEnabled = false; // アニメーションの状態を制御する変数
+    let gridEnabled = true; // グリッド表示の状態を制御する変数
+    let textMeshXArray = []; // X軸方向のテキストメッシュを格納する配列
+    let textMeshZArray = []; // Z軸方向のテキストメッシュを格納する配列
+
+    const bossHeight = parseFloat(document.getElementById("bossHeight").value);
+
+    // X-Z平面にグリッドを表示
+    const gridSize = 400; // グリッドのサイズ
+    const gridDivisions = 20; // グリッドの分割数
+    const gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
+    scene.add(gridHelper);
+
+    // グリッドに数値を表示
+    const fontLoader = new THREE.FontLoader();
+    fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+      const textColor = 0x000000; // テキストの色
+      const textSize = 5; // テキストのサイズ
+
+      for (let i = -gridDivisions / 2; i <= gridDivisions / 2; i++) {
+        const textValue = i * (gridSize / gridDivisions);
+
+        const textGeometry = new THREE.TextGeometry(textValue.toString(), {
+          font: font,
+          size: textSize,
+          height: 0.1,
+          curveSegments: 12,
+          bevelEnabled: false
+        });
+
+        const textMaterial = new THREE.MeshBasicMaterial({ color: textColor });
+        const textMeshX = new THREE.Mesh(textGeometry, textMaterial);
+        const textMeshZ = new THREE.Mesh(textGeometry, textMaterial);
+
+        // X軸方向にテキストを配置
+        textMeshX.position.x = textValue;
+        textMeshX.position.y = -bossHeight - 2; // グリッドから少し浮かせる
+        textMeshX.position.z = 0;
+        textMeshX.rotation.x = -Math.PI / 2; // X軸を中心に90度回転
+
+        // Z軸方向にテキストを配置
+        textMeshZ.position.x = 0;
+        textMeshZ.position.y = -bossHeight - 2; // グリッドから少し浮かせる
+        textMeshZ.position.z = -textValue;
+        textMeshZ.rotation.x = -Math.PI / 2; // X軸を中心に90度回転
+
+        scene.add(textMeshX);
+        scene.add(textMeshZ);
+
+        textMeshXArray.push(textMeshX); // 配列にテキストメッシュを追加
+        textMeshZArray.push(textMeshZ); // 配列にテキストメッシュを追加
+      }
+    });
+
+    function createFanBladeGeometry(topWidth, bottomWidth, height, thickness, tiltAngleRad) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-bottomWidth / 2, 0);
+      shape.lineTo( bottomWidth / 2, 0);
+      shape.lineTo( topWidth / 2, height);
+      shape.lineTo(-topWidth / 2, height);
+      shape.lineTo(-bottomWidth / 2, 0);
+      // shape.moveTo(0, 0);
+      // shape.lineTo(bottomWidth, 0);
+      // shape.lineTo(topWidth, height);
+      // shape.lineTo(0, height);
+      // shape.lineTo(0, 0);
+
+      const extrudeSettings = {
+        steps: 1,
+        depth: thickness,
+        bevelEnabled: false
+      };
+
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      bladeThickOffset = thickness / 2; // 羽根の厚みを考慮してオフセットを計算
+      geometry.translate(0, 0, -bladeThickOffset); // 羽根の位置を調整
+      geometry.rotateY(tiltAngleRad);
+      return geometry;
+    }
+
+    function createFanBlades(numBlades, topWidth, bottomWidth, height, thickness, tiltAngleDeg, radius) {
+      const blades = new THREE.Group();
+      const tiltAngleRad = THREE.MathUtils.degToRad(tiltAngleDeg);
+      const centralAngle = 2 * Math.PI / numBlades;
+
+      const bossDiameter = parseFloat(document.getElementById("bossDiameter").value);
+      const bossHeight = parseFloat(document.getElementById("bossHeight").value);
+      const bossRadius = bossDiameter / 2;
+      const bladeOffset = bossRadius; // 羽根の配置半径
+      //const bladeOffset = bossRadius + bottomWidth / 2; // 羽根の配置半径
+
+      for (let i = 0; i < numBlades; i++) {
+        const bladeGeometry = createFanBladeGeometry(topWidth, bottomWidth, height, thickness, tiltAngleRad);
+        const bladeMaterial = new THREE.MeshPhongMaterial({ color: 0x888888, side: THREE.DoubleSide });
+        const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
+        const angle = i * centralAngle;
+
+        // 羽根の回転を調整
+        bladeMesh.rotation.y = angle; // 羽根を円周に沿って配置
+        bladeMesh.rotation.z = Math.PI / 2; // 羽根の長手方向を半径方向に向ける
+
+        const bossOffset = 2.0; // 羽根をボスに没入する量
+
+        // 羽根の位置を調整
+        bladeMesh.position.x = - (bladeOffset - bossOffset) * Math.cos(angle); // ボスの半径に基づいて羽根の位置を計算
+        bladeMesh.position.z = (bladeOffset - bossOffset) * Math.sin(angle); // ボスの半径に基づいて羽根の位置を計算
+        bladeMesh.position.y = - bossHeight / 2; // 羽根の位置をボスの高さに合わせる
+        // bladeMesh.position.y = bossHeight / 2 - thickness / 2; // 羽根の軸線をボスの高さの真ん中に配置
+
+        blades.add(bladeMesh);
+      }
+      return blades;
+    }
+
+    function createBoss(radius, height, holeRadius) {
+      const geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
+      const material = new THREE.MeshPhongMaterial({
+        color: 0x333333,
+        side: THREE.DoubleSide
+      });
+
+      const bossMesh = new THREE.Mesh(geometry, material);
+      bossMesh.position.y = -height / 2;
+
+      if (holeRadius > 0) {
+        // 穴用の円柱を作成
+        const holeGeometry = new THREE.CylinderGeometry(holeRadius, holeRadius, height + 0.1, 32);
+        const holeMesh = new THREE.Mesh(holeGeometry, material);
+        holeMesh.position.y = -height /2;
+
+        // 穴を表現するために透明な材質を使用
+        const transparentMaterial = new THREE.MeshPhongMaterial({
+          color: 0x000000,
+          transparent: true,
+          opacity: 0,
+          side: THREE.DoubleSide
+        });
+        holeMesh.material = transparentMaterial;
+
+        // ボスと穴を組み合わせたグループを作成
+        const bossGroup = new THREE.Group();
+        bossGroup.add(bossMesh);
+        bossGroup.add(holeMesh);
+
+        return bossGroup;
+      }
+      return bossMesh;
+    }
+
+    function generateFan(bossDiameter, bossHeight, bossHoleDiameter, bladeLength, bladeThickness, bladeTopWidth, bladeBottomWidth, bladeTiltAngleDeg, numBlades) {
+      //const numBlades = 4; // 羽根の数は固定とします (必要であれば入力できるように変更してください)
+      const bossRadius = bossDiameter / 2;
+      const fanRadius = bossRadius; // 羽根の配置半径を調整
+      //const fanRadius = bossRadius + bladeBottomWidth / 2; // 羽根の配置半径を調整
+
+      const fanBlades = createFanBlades(numBlades, bladeTopWidth, bladeBottomWidth, bladeLength, bladeThickness, bladeTiltAngleDeg, fanRadius);
+      const fanBoss = createBoss(bossDiameter / 2, bossHeight, bossHoleDiameter / 2);
+
+      const newFan = new THREE.Group();
+      newFan.add(fanBlades);
+      newFan.add(fanBoss);
+
+      return newFan;
+    }
+
+    function updateFan() {
+      const bossDiameter = parseFloat(document.getElementById("bossDiameter").value);
+      const bossHeight = parseFloat(document.getElementById("bossHeight").value);
+      const bossHoleDiameter = parseFloat(document.getElementById("bossHoleDiameter").value);
+      const bladeLengthInit = parseFloat(document.getElementById("bladeLength").value);
+      const bladeThickness = parseFloat(document.getElementById("bladeThickness").value);
+      const bladeTopWidth = parseFloat(document.getElementById("bladeTopWidth").value);
+      const bladeBottomWidth = parseFloat(document.getElementById("bladeBottomWidth").value);
+      const bladeTiltAngleDeg = parseFloat(document.getElementById("bladeTiltAngleDeg").value);
+      const numBlades = parseFloat(document.getElementById("numBlades").value);
+
+      const bossOffset = 2.0; // 羽根をボスに没入する量。このため，モデルでは羽根の根元の幅が設定値より大きくなる。
+      const bladeLength = bladeLengthInit + bossOffset; // 羽根の長さをボスへの没入量に基づいて調整
+
+      if (fan) {
+        scene.remove(fan);
+      }
+
+      fan = generateFan(bossDiameter, bossHeight, bossHoleDiameter, bladeLength, bladeThickness, bladeTopWidth, bladeBottomWidth, bladeTiltAngleDeg, numBlades);
+
+      // グリッドの位置をボスの底面に合わせる
+      gridHelper.position.y = -bossHeight;
+
+      scene.add(fan);
+    }
+
+    // 初期描画
+    updateFan();
+
+    // チェックボックスの状態を初期化
+    document.getElementById("animationCheckbox").checked = animationEnabled;
+    document.getElementById("gridCheckbox").checked = gridEnabled;
+
+    // 更新ボタンのイベントリスナー
+    document.getElementById("updateButton").addEventListener("click", updateFan);
+
+    // アニメーションOn/Offチェックボックスのイベントリスナー
+    document.getElementById("animationCheckbox").addEventListener("change", () => {
+      animationEnabled = document.getElementById("animationCheckbox").checked;
+    });
+
+    // グリッド表示チェックボックスのイベントリスナー
+    document.getElementById("gridCheckbox").addEventListener("change", () => {
+      gridEnabled = document.getElementById("gridCheckbox").checked;
+      gridHelper.visible = gridEnabled; // グリッドの表示/非表示を切り替える
+
+      // グリッドの数値テキストの表示/非表示を切り替える
+      textMeshXArray.forEach(textMesh => {
+        textMesh.visible = gridEnabled;
+      });
+      textMeshZArray.forEach(textMesh => {
+        textMesh.visible = gridEnabled;
+      });
+    });
+
+    // STLエクスポートボタンのイベントリスナー
+    document.getElementById("exportSTL").addEventListener("click", () => {
+      exportSTL();
+    });
+
+    // アニメーションループ
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (animationEnabled && fan) {
+        fan.rotation.y += 0.01;
+      }
+
+      controls.update(); // controlsを更新
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newWidth, newHeight);
+    });
+  
+    // STLエクスポート関数
+    function exportSTL() {
+      if (!fan) {
+        alert("扇風機が生成されていません。");
+        return;
+      }
+
+      const exporter = new THREE.STLExporter();
+
+      // エクスポート実行
+      const stlString = exporter.parse(fan);
+
+      // ダウンロード処理
+      const blob = new Blob([stlString], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'fan.stl';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+
+</script>
+</body>
+</html>
+<!-- </html> -->
