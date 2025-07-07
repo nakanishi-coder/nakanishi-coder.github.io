@@ -1,0 +1,794 @@
+/* =================================================
+   レスポンシブデザイン CSS
+   ================================================= */
+
+/* ベースのブレークポイント定義 */
+:root {
+  --mobile-breakpoint: 768px;
+  --tablet-breakpoint: 1024px;
+  --desktop-breakpoint: 1200px;
+  
+  /* レスポンシブ用の変数 */
+  --sidebar-width-mobile: 100%;
+  --sidebar-width-tablet: 320px;
+  --sidebar-width-desktop: 350px;
+  
+  --header-height-mobile: 60px;
+  --header-height-desktop: 70px;
+  
+  /* アニメーション */
+  --transition-speed: 0.3s;
+}
+
+/* =================================================
+   モバイル優先のベーススタイル
+   ================================================= */
+
+/* HTML基本設定 */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* メインコンテナのレスポンシブ対応 */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* モバイルメニューボタン */
+.mobile-menu-toggle {
+  display: block;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(102, 126, 234, 0.9);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color var(--transition-speed);
+  z-index: 1001;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(102, 126, 234, 1);
+}
+
+/* メインコンテンツエリア */
+.main-content {
+  display: flex;
+  flex: 1;
+  min-height: 0; /* Flexboxで高さを適切に計算するため */
+  overflow: hidden;
+  width: 100%; /* 幅を明示的に指定 */
+}
+
+/* サイドバーのレスポンシブ対応 */
+.sidebar {
+  width: var(--sidebar-width-mobile);
+  min-width: 280px;
+  max-width: 400px;
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  overflow-y: auto;
+  flex-shrink: 0; /* サイドバーの縮小を防ぐ */
+  transition: transform var(--transition-speed);
+  z-index: 999;
+  height: 100%; /* モバイル時の高さを確保 */
+}
+
+/* モバイルでサイドバーを隠す */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed; /* absoluteからfixedに変更 */
+    top: 0; /* ヘッダーがないので0から開始 */
+    left: 0;
+    height: 100vh; /* 全画面の高さ */
+    transform: translateX(-100%);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.15); /* 影を追加 */
+  }
+  
+  .sidebar.visible {
+    transform: translateX(0);
+  }
+  
+  /* モバイルでのタブナビゲーション */
+  .tab-navigation {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0.5rem;
+    gap: 0.25rem;
+    scrollbar-width: thin;
+  }
+  
+  .tab-button {
+    flex: 0 0 auto;
+    min-width: 80px;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+  }
+  
+  /* アコーディオンヘッダーをタップしやすく */
+  .accordion-header {
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+.sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+/* サイドバーが表示されている時のオーバーレイ */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+/* 3Dビューエリア */
+.viewer-container {
+  flex: 1 1 0; /* flex-grow: 1, flex-shrink: 1, flex-basis: 0 */
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh; /* ヘッダー分を除去 */
+  min-width: 400px; /* 最小幅を増加 */
+  width: 100%; /* 明示的に幅を指定 */
+  background-color: #f0f0f0;
+}
+
+/* レンダラーコンテナ（既存のスタイルを確実に適用） */
+.renderer-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  min-height: 100%;
+  min-width: 100%; /* 最小幅を追加 */
+}
+
+.renderer-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* タブナビゲーションのレスポンシブ対応 */
+.tab-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tab-button {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* タブボタンのスタイル改善 */
+.tab-button {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  transition: all var(--transition-speed);
+  cursor: pointer;
+  color: #495057;
+}
+
+.tab-button:hover {
+  background: #e9ecef;
+  color: #212529;
+}
+
+.tab-button.active {
+  background: #0d6efd;
+  color: white;
+  font-weight: 500;
+}
+
+.tab-button.active:hover {
+  background: #0b5ed7;
+}
+
+/* タブコンテンツのスタイル */
+.tab-content {
+  display: none;
+  padding: 1rem 0;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* フォーム要素のレスポンシブ対応 */
+.input-group {
+  margin-bottom: 0.75rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* ボタングリッドのレスポンシブ対応 */
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.button-grid .btn {
+  justify-self: stretch;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* =================================================
+   タブレット対応 (768px以上)
+   ================================================= */
+
+@media (min-width: 768px) {
+  /* タブレットではモバイルメニューを非表示 */
+  .mobile-menu-toggle {
+    display: none;
+  }
+  
+  /* サイドバーを固定表示 */
+  .sidebar {
+    width: var(--sidebar-width-tablet);
+    min-width: 320px;
+    max-width: 380px;
+    position: relative;
+    transform: none !important;
+    height: auto; /* タブレット以上では高さを自動調整 */
+    top: auto;
+    left: auto;
+    box-shadow: none; /* タブレット以上では影を削除 */
+  }
+  
+  .sidebar.hidden {
+    position: relative;
+    transform: none !important;
+    height: auto;
+  }
+  
+  .sidebar-overlay {
+    display: none !important;
+  }
+  
+  /* 3Dビューの高さをタブレット以上で調整 */
+  .viewer-container {
+    min-height: 100vh; /* ヘッダー分を除去 */
+    min-width: 500px; /* タブレット以上では更に大きな最小幅 */
+    flex: 1 1 auto; /* より柔軟なflex設定 */
+  }
+  
+  /* タブナビゲーションの改善 */
+  .tab-button {
+    flex: none;
+    min-width: 120px;
+  }
+  
+  /* ボタングリッドを2列に */
+  .button-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  /* フォーム要素のサイズ調整 */
+  .input-group input,
+  .input-group select,
+  .input-group textarea {
+    font-size: 1rem;
+  }
+}
+
+/* =================================================
+   デスクトップ対応 (1024px以上)
+   ================================================= */
+
+@media (min-width: 1024px) {
+  .sidebar {
+    width: var(--sidebar-width-desktop);
+  }
+  
+  /* デスクトップでは3Dビューエリアをより大きく */
+  .viewer-container {
+    min-width: 600px;
+    flex: 2 1 auto; /* より大きなflex-grow値 */
+  }
+  
+  /* ボタングリッドを3列に */
+  .button-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* より大きなフォント */
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* =================================================
+   大画面対応 (1200px以上)
+   ================================================= */
+
+@media (min-width: 1200px) {
+  .main-content {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+/* =================================================
+   プリント対応
+   ================================================= */
+
+@media print {
+  .sidebar,
+  .tab-navigation,
+  .mobile-menu-toggle {
+    display: none !important;
+  }
+  
+  .viewer-container {
+    width: 100% !important;
+    height: 80vh !important;
+  }
+}
+
+/* =================================================
+   ダークモード対応（将来の拡張用）
+   ================================================= */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --border-color: #333333;
+  }
+  
+  .sidebar {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+  }
+}
+
+/* =================================================
+   アクセシビリティ対応
+   ================================================= */
+
+/* 動きを減らす設定 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* フォーカス表示の改善 */
+.mobile-menu-toggle:focus,
+.tab-button:focus,
+.btn:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* タッチデバイス対応 */
+@media (hover: none) and (pointer: coarse) {
+  .tab-button,
+  .btn {
+    min-height: 44px; /* タッチターゲットの最小サイズ */
+  }
+  
+  .mobile-menu-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* =================================================
+   サイドバータブ・アコーディオンスタイル
+   ================================================= */
+
+/* タブナビゲーション */
+.sidebar-tabs {
+  display: flex;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  border-bottom: 2px solid transparent;
+}
+
+.sidebar-tab:hover {
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.sidebar-tab.active {
+  background: #fff;
+  color: #495057;
+  border-bottom-color: #667eea;
+}
+
+/* タブコンテンツ */
+.sidebar-tab-content {
+  display: none;
+  padding: 1rem;
+  height: calc(100% - 50px);
+  overflow-y: auto;
+}
+
+.sidebar-tab-content.active {
+  display: block;
+}
+
+/* アコーディオンセクション */
+.accordion-section {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.accordion-header {
+  background: #f8f9fa;
+  border: none;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color var(--transition-speed);
+}
+
+.accordion-header:hover {
+  background: #e9ecef;
+}
+
+.accordion-header.active {
+  background: #e7f1ff;
+  color: #0d6efd;
+}
+
+.accordion-icon {
+  font-size: 0.875rem;
+  transition: transform var(--transition-speed);
+}
+
+.accordion-header.active .accordion-icon {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--transition-speed) ease-out;
+  background: #fff;
+}
+
+.accordion-content.show {
+  max-height: 1000px; /* 十分に大きな値 */
+  transition: max-height var(--transition-speed) ease-in;
+  padding: 1rem;
+}
+
+.accordion-content.active {
+  max-height: 1000px; /* 十分に大きな値 */
+  transition: max-height var(--transition-speed) ease-in;
+  padding: 1rem;
+}
+
+.accordion-body {
+  padding: 1rem;
+}
+
+/* アコーディオン内のフォームスタイル改善 */
+.accordion-content h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.accordion-content .input-section {
+  margin-bottom: 1.5rem;
+}
+
+.accordion-content .input-section:last-child {
+  margin-bottom: 0;
+}
+
+.verification-group {
+  border-top: 1px solid #dee2e6;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.verification-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.verification-buttons .btn {
+  font-size: 0.75rem;
+  padding: 0.5rem;
+}
+
+/* コンパクトなボタングリッド */
+.compact-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.compact-button-grid .btn {
+  padding: 0.5rem 0.25rem;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* コンパクトな入力グループ */
+.compact-input-group {
+  margin-bottom: 0.5rem;
+}
+
+.compact-input-group label {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.compact-input-group input,
+.compact-input-group select {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* インライン入力グループ */
+.inline-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+  margin-bottom: 0.5rem;
+}
+
+.inline-input-group > * {
+  flex: 1;
+}
+
+.inline-input-group .btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* ステータス表示 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+}
+
+.status-badge.ready {
+  background: #d1edff;
+  color: #0969da;
+}
+
+.status-badge.warning {
+  background: #fff4e6;
+  color: #bf8700;
+}
+
+.status-badge.error {
+  background: #ffebe9;
+  color: #cf222e;
+}
+
+/* モバイル対応 */
+@media (max-width: 767px) {
+  .sidebar-tabs {
+    flex-direction: column;
+  }
+  
+  .sidebar-tab {
+    border-bottom: 1px solid #dee2e6;
+    border-right: none;
+  }
+  
+  .sidebar-tab.active {
+    border-bottom-color: #dee2e6;
+    border-left: 3px solid #667eea;
+  }
+  
+  .compact-button-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* =================================================
+   操作ヒントのスタイル
+   ================================================= */
+
+.mode-hints {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.hint-text {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+.hint-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.hint-steps li {
+  margin-bottom: 0.25rem;
+}
+
+.hint-steps li:last-child {
+  margin-bottom: 0;
+}
+
+/* ビューコントロールのスタイル */
+.view-control-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.view-control-section h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.view-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.view-buttons .btn {
+  font-size: 0.75rem;
+  padding: 0.5rem;
+  white-space: nowrap;
+}
+
+.view-controls {
+  border-top: 1px solid #dee2e6;
+  padding-top: 0.75rem;
+}
+
+.zoom-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.zoom-controls .btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  min-width: 2rem;
+}
+
+.display-elements-section,
+.displacement-scale-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.display-elements-section h5,
+.displacement-scale-section h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* タブレット以上でのビューボタンレイアウト */
+@media (min-width: 768px) {
+  .view-buttons {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* デスクトップでのビューボタンレイアウト */
+@media (min-width: 1024px) {
+  .view-buttons {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .view-buttons .btn {
+    font-size: 0.875rem;
+    padding: 0.75rem;
+  }
+}
