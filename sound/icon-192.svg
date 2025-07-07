@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="192" height="192" rx="20" fill="#3b82f6"/>
+  
+  <!-- 音波アイコン -->
+  <circle cx="60" cy="96" r="8" fill="white"/>
+  <path d="M75 96 Q90 80 105 96 Q120 112 135 96" stroke="white" stroke-width="4" fill="none"/>
+  <path d="M75 96 Q100 70 125 96 Q150 122 175 96" stroke="white" stroke-width="3" fill="none" opacity="0.7"/>
+  
+  <!-- マイクアイコン -->
+  <rect x="80" y="120" width="32" height="48" rx="16" fill="white"/>
+  <rect x="90" y="130" width="12" height="28" rx="6" fill="#3b82f6"/>
+  <path d="M96 168 V180 M86 180 L106 180" stroke="white" stroke-width="3"/>
+  
+  <!-- 周波数グラフ -->
+  <rect x="120" y="50" width="4" height="30" fill="white" opacity="0.8"/>
+  <rect x="128" y="40" width="4" height="50" fill="white" opacity="0.9"/>
+  <rect x="136" y="35" width="4" height="60" fill="white"/>
+  <rect x="144" y="45" width="4" height="40" fill="white" opacity="0.7"/>
+  <rect x="152" y="55" width="4" height="20" fill="white" opacity="0.6"/>
+</svg>
