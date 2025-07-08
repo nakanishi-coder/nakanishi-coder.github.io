@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="中学生向け音響解析アプリ - 音の波形と周波数を可視化" />
+    <title>音響解析アプリ</title>
+    
+    <!-- PWA設定 -->
+    <link rel="manifest" href="./assets/manifest-DINIKdvZ.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="音響解析">
+    
+    <!-- Service Worker登録 -->
+    <script>
+      // バージョン情報
+      console.log('🎵 音響解析アプリ v0.26.2 - タブレット最適化版（タッチ操作改善・PWA強化）');
+      
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration)
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError)
+            })
+        })
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/main-smu78NDy.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main--Y8sFi7x.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <h1>🎵 音響解析アプリ</h1>
+        <p>音を録音して、波形と周波数を調べてみよう！</p>
+      </header>
+      
+      <main class="app-main">
+        <!-- 解析モード選択 -->
+        <section class="mode-section">
+          <h3>📊 解析モード選択</h3>
+          <div class="mode-controls">
+            <label class="mode-label">
+              <input type="radio" name="analysis-mode" value="recording" checked>
+              📼 録音解析モード
+              <span class="mode-description">音を録音してから解析</span>
+            </label>
+            <label class="mode-label">
+              <input type="radio" name="analysis-mode" value="realtime">
+              🔴 リアルタイム解析モード
+              <span class="mode-description">マイクからの音を連続解析</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- 録音コントロール -->
+        <section class="recording-section">
+          <div class="recording-controls">
+            <label for="duration-select">録音時間:</label>
+            <select id="duration-select">
+              <option value="3">3秒</option>
+              <option value="10">10秒</option>
+            </select>
+            
+            <label for="fft-resolution-select">周波数分解能:</label>
+            <select id="fft-resolution-select">
+              <option value="1024">約43Hz間隔</option>
+              <option value="2048" selected>約21.5Hz間隔</option>
+              <option value="4096">約10.8Hz間隔</option>
+              <option value="8192">約5.4Hz間隔</option>
+              <option value="16384">約2.7Hz間隔</option>
+              <option value="32768">約1.3Hz間隔</option>
+            </select>
+            
+            <button id="record-btn" class="record-button">🎤 録音開始</button>
+            <button id="save-for-comparison" class="comparison-button" disabled>
+              📊 比較用に保存
+            </button>
+          </div>
+          <div id="countdown-display" class="countdown-display">
+            <div id="countdown-number" class="countdown-number"></div>
+            <div id="countdown-message" class="countdown-message"></div>
+          </div>
+          <div id="recording-status" class="recording-status"></div>
+        </section>
+
+        <!-- リアルタイム解析コントロール -->
+        <section class="realtime-section" style="display: none;">
+          <div class="realtime-controls">
+            <label for="fft-resolution-select-realtime">周波数分解能:</label>
+            <select id="fft-resolution-select-realtime">
+              <option value="1024">約43Hz間隔</option>
+              <option value="2048" selected>約21.5Hz間隔</option>
+              <option value="4096">約10.8Hz間隔</option>
+              <option value="8192">約5.4Hz間隔</option>
+              <option value="16384">約2.7Hz間隔</option>
+              <option value="32768">約1.3Hz間隔</option>
+            </select>
+            <button id="realtime-start-btn" class="realtime-button start">🔴 解析開始</button>
+            <button id="realtime-stop-btn" class="realtime-button stop" disabled>⏹️ 解析停止</button>
+            <button id="realtime-save-comparison" class="comparison-button" disabled>
+              📊 比較用に保存
+            </button>
+          </div>
+          <div id="realtime-status" class="realtime-status">
+            マイクアクセスの許可が必要です
+          </div>
+        </section>
+
+        <!-- 解析結果表示 -->
+        <section class="analysis-section">
+          <div class="charts-container">
+            <div class="chart-wrapper">
+              <div class="chart-header">
+                <h3>時間波形</h3>
+                <button id="waveform-zoom-reset" class="zoom-reset-btn">🔍 ズームリセット</button>
+              </div>
+              <canvas id="waveform-chart"></canvas>
+              <div class="chart-info">
+                <p>音の大きさの時間変化を表示</p>
+              </div>
+            </div>
+            
+            <div class="chart-wrapper">
+              <div class="chart-header">
+                <h3>周波数解析</h3>
+                <button id="frequency-zoom-reset" class="zoom-reset-btn">🔍 ズームリセット</button>
+              </div>
+              <canvas id="frequency-chart"></canvas>
+              <div class="chart-info">
+                <p>音に含まれる周波数成分を表示</p>
+                <div id="marker-info" class="marker-info" style="display: none;">
+                  <strong>選択した点:</strong> 
+                  <span id="marker-frequency">-</span> Hz, 
+                  <span id="marker-magnitude">-</span> dB
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 数値情報 -->
+          <div class="metrics-container">
+            <h3>測定結果</h3>
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <label>最大音量:</label>
+                <span id="max-volume">-</span> dB
+              </div>
+              <div class="metric-item">
+                <label>ピーク周波数:</label>
+                <span id="peak-frequency">-</span> Hz
+              </div>
+              <div class="metric-item">
+                <label>録音時間:</label>
+                <span id="recording-duration">-</span> 秒
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 比較機能 -->
+        <section class="comparison-section">
+          <h3>音の比較</h3>
+          <div class="comparison-controls">
+            <button id="clear-comparison" class="comparison-button" disabled>
+              🗑️ 比較データクリア
+            </button>
+            <button id="export-comparison" class="comparison-button" disabled>
+              📤 比較データ一括保存
+            </button>
+          </div>
+          <div id="comparison-charts" class="comparison-charts"></div>
+        </section>
+
+        <!-- データ保存 -->
+        <section class="export-section">
+          <h3>データ保存</h3>
+          <div class="export-controls">
+            <label for="export-format">保存形式:</label>
+            <select id="export-format">
+              <option value="detailed">詳細データ（推奨）</option>
+              <option value="simple">シンプル</option>
+              <option value="waveform-only">時間波形のみ</option>
+              <option value="frequency-only">周波数データのみ</option>
+            </select>
+            <button id="export-data" class="export-button" disabled>
+              💾 測定データをダウンロード
+            </button>
+          </div>
+          <div class="export-info">
+            <p><strong>詳細データ:</strong> 測定概要、時間波形、周波数データを含む完全版</p>
+            <p><strong>シンプル:</strong> 基本的な時間波形と周波数データのみ</p>
+            <p><strong>時間波形のみ:</strong> 音の波形データのみ（Excel等で開きやすい）</p>
+            <p><strong>周波数データのみ:</strong> 周波数解析結果のみ</p>
+          </div>
+        </section>
+
+        <!-- 開発者用デバッグ情報 -->
+        <section class="debug-section" id="debug-section" style="display: block; border: 2px solid red;">
+          <h3>🔧 開発者情報</h3>
+          <div class="debug-controls">
+            <button id="test-fft" class="comparison-button">FFT精度テスト実行</button>
+            <button id="show-debug" class="comparison-button">デバッグ情報表示</button>
+          </div>
+          <div id="debug-info" class="debug-info"></div>
+        </section>
+      </main>
+    </div>
+    
+  </body>
+</html>
