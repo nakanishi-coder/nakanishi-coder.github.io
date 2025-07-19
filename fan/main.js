@@ -97,11 +97,15 @@ fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.
     textMeshX.position.y = -bossHeight - 2; // グリッドから少し浮かせる
     textMeshX.position.z = 0;
     textMeshX.rotation.x = -Math.PI / 2; // X軸を中心に90度回転
+    textMeshX.userData.offsetX = textValue;
+    textMeshX.userData.offsetZ = 0;
     // Z軸方向にテキストを配置
     textMeshZ.position.x = 0;
     textMeshZ.position.y = -bossHeight - 2; // グリッドから少し浮かせる
     textMeshZ.position.z = -textValue;
     textMeshZ.rotation.x = -Math.PI / 2; // X軸を中心に90度回転
+    textMeshZ.userData.offsetX = 0;
+    textMeshZ.userData.offsetZ = -textValue;
     scene.add(textMeshX);
     scene.add(textMeshZ);
     textMeshXArray.push(textMeshX); // 配列にテキストメッシュを追加
@@ -169,8 +173,21 @@ renderer.domElement.addEventListener('mousemove', (event) => {
   if (isDraggingFan && fan) {
     const worldPos = getWorldPositionFromMouse(event);
     if (!worldPos) return;
-    fan.position.x = worldPos.x - dragOffset.x;
-    fan.position.z = worldPos.z - dragOffset.z;
+    const newX = worldPos.x - dragOffset.x;
+    const newZ = worldPos.z - dragOffset.z;
+    fan.position.x = newX;
+    fan.position.z = newZ;
+    gridHelper.position.x = newX;
+    gridHelper.position.z = newZ;
+    // グリッド上の数値テキストも一体化して移動
+    textMeshXArray.forEach(textMesh => {
+      textMesh.position.x = newX + textMesh.userData.offsetX;
+      textMesh.position.z = newZ + textMesh.userData.offsetZ;
+    });
+    textMeshZArray.forEach(textMesh => {
+      textMesh.position.x = newX + textMesh.userData.offsetX;
+      textMesh.position.z = newZ + textMesh.userData.offsetZ;
+    });
   }
 });
 
