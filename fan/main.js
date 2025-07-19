@@ -198,24 +198,59 @@ renderer.domElement.addEventListener('mouseup', () => {
   }
 });
 
+/**
+ * 扇風機の風力・風速・風量などを計算する関数（距離減衰対応）
+ * @param {Object} params - 計算パラメータ
+ * @param {number} params.diameter - 羽根円直径[mm]
+ * @param {number} params.rpm - 回転数[rpm]
+ * @param {number} params.distance - 距離[m]
+ * @param {number} params.angle - 拡散角度[deg]
+ * @param {number} params.numBlades - 羽根枚数
+ * @param {number} params.bladeTopWidth - 羽根先端幅[mm]
+ * @param {number} params.bladeBottomWidth - 羽根根元幅[mm]
+ * @returns {Object} 計算結果（推力, 風速, 風量, 面積, 距離xでの風速・面積, Ct, 補正係数など）
+ *
+ * 空気密度・推力係数Ct・枚数/形状補正・運動量理論・距離減衰を考慮
+ * - Ct = Ct_base * 枚数補正 * 形状補正
+ * - 枚数補正: 4枚基準、枚数が多いほど効率低下（Ct補正 = 1 - 0.03*(numBlades-4)）
+ * - 形状補正: 幅比（先端幅/根元幅）が大きいほど効率UP（Ct補正 = 1 + 0.05*(widthRatio-1)）
+ * - 推力: Ct * 空気密度 * n^2 * D^4
+ * - 風速: sqrt(推力 / (空気密度 * 羽根面積 * 0.8))
+ * - 風量: 羽根面積 * 風速 * 3600
+ * - 距離xでの断面積: Ax = π * ((D/2) + x * tanθ)^2
+ * - 距離xでの風速: Vx = V0 * (A0 / Ax)
+ */
 function calcFanWindForce(params) {
+  // 空気密度 [kg/m^3]
   const AIR_DENSITY = 1.225;
+  // 推力係数（基本値）
   let Ct_base = 0.12;
+  // 羽根枚数・形状補正係数
+  // 枚数補正: 4枚基準、枚数が多いほど効率低下（例: Ct補正 = 1 - 0.03*(numBlades-4)）
   const numBlades = params.numBlades || 4;
-  let bladeCountCoef = 1 - 0.03 * (numBlades - 4);
+  let bladeCountCoef = 1 - 0.03 * (numBlades - 4); // 4枚基準
+  // 形状補正: 幅比（先端幅/根元幅）が大きいほど効率UP（例: Ct補正 = 1 + 0.05*(widthRatio-1)）
   const widthRatio = params.bladeTopWidth && params.bladeBottomWidth ? (params.bladeTopWidth / params.bladeBottomWidth) : 1;
   let bladeShapeCoef = 1 + 0.05 * (widthRatio - 1);
+  // 総合Ct
   const Ct = Ct_base * bladeCountCoef * bladeShapeCoef;
-  const D = params.diameter / 1000;
-  const n = params.rpm / 60;
-  const A0 = Math.PI * Math.pow(D/2, 2);
+
+  // 入力値取得
+  const D = params.diameter / 1000; // mm→m
+  const n = params.rpm / 60; // rpm→rps
+  const A0 = Math.PI * Math.pow(D/2, 2); // 羽根円面積
+  // 推力計算
   const thrust = Ct * AIR_DENSITY * Math.pow(n,2) * Math.pow(D,4);
+  // 風速計算（運動量理論）
   const V0 = Math.sqrt(thrust / (AIR_DENSITY * A0 * 0.8));
-  const volumeFlow = A0 * V0 * 3600;
-  const x = params.distance;
-  const theta = params.angle * Math.PI / 180;
-  const Ax = Math.PI * Math.pow((D/2) + x * Math.tan(theta), 2);
-  const Vx = V0 * (A0 / Ax);
+  // 風量計算
+  const volumeFlow = A0 * V0 * 3600; // m^3/h
+
+  // 距離ごとの風速減衰
+  const x = params.distance; // m
+  const theta = params.angle * Math.PI / 180; // rad
+  const Ax = Math.PI * Math.pow((D/2) + x * Math.tan(theta), 2); // 拡散断面積
+  const Vx = V0 * (A0 / Ax); // 距離xでの風速
   return {
     thrust: thrust,
     velocity: V0,
