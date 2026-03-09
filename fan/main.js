@@ -208,12 +208,14 @@ renderer.domElement.addEventListener('mouseup', () => {
  * @param {number} params.numBlades - 羽根枚数
  * @param {number} params.bladeTopWidth - 羽根先端幅[mm]
  * @param {number} params.bladeBottomWidth - 羽根根元幅[mm]
+ * @param {number} params.bladeTiltAngleDeg - 羽根傾斜角[deg]
  * @returns {Object} 計算結果（推力, 風速, 風量, 面積, 距離xでの風速・面積, Ct, 補正係数など）
  *
- * 空気密度・推力係数Ct・枚数/形状補正・運動量理論・距離減衰を考慮
- * - Ct = Ct_base * 枚数補正 * 形状補正
+ * 空気密度・推力係数Ct・枚数/形状/角度補正・運動量理論・距離減衰を考慮
+ * - Ct = Ct_base * 枚数補正 * 形状補正 * 角度補正
  * - 枚数補正: 4枚基準、枚数が多いほど効率低下（Ct補正 = 1 - 0.03*(numBlades-4)）
  * - 形状補正: 幅比（先端幅/根元幅）が大きいほど効率UP（Ct補正 = 1 + 0.05*(widthRatio-1)）
+ * - 角度補正: sin(2β)/sin(2β_ref) をクリップ（0.2～1.8, β_ref=45°）
  * - 推力: Ct * 空気密度 * n^2 * D^4
  * - 風速: sqrt(推力 / (空気密度 * 羽根面積 * 0.8))
  * - 風量: 羽根面積 * 風速 * 3600
@@ -232,8 +234,16 @@ function calcFanWindForce(params) {
   // 形状補正: 幅比（先端幅/根元幅）が大きいほど効率UP（例: Ct補正 = 1 + 0.05*(widthRatio-1)）
   const widthRatio = params.bladeTopWidth && params.bladeBottomWidth ? (params.bladeTopWidth / params.bladeBottomWidth) : 1;
   let bladeShapeCoef = 1 + 0.05 * (widthRatio - 1);
+  // 角度補正: fβ = sin(2β)/sin(2β_ref)（β_ref=45°）
+  const bladeTiltAngleDeg = params.bladeTiltAngleDeg ?? 75;
+  const betaRefDeg = 45;
+  const betaRad = bladeTiltAngleDeg * Math.PI / 180;
+  const betaRefRad = betaRefDeg * Math.PI / 180;
+  const betaDenominator = Math.sin(2 * betaRefRad);
+  const bladeAngleCoefRaw = betaDenominator !== 0 ? (Math.sin(2 * betaRad) / betaDenominator) : 1;
+  const bladeAngleCoef = Math.max(0.2, Math.min(1.8, bladeAngleCoefRaw));
   // 総合Ct
-  const Ct = Ct_base * bladeCountCoef * bladeShapeCoef;
+  const Ct = Ct_base * bladeCountCoef * bladeShapeCoef * bladeAngleCoef;
 
   // 入力値取得
   const D = params.diameter / 1000; // mm→m
@@ -261,6 +271,8 @@ function calcFanWindForce(params) {
     Ct: Ct,
     bladeCountCoef: bladeCountCoef,
     bladeShapeCoef: bladeShapeCoef,
+    bladeAngleCoef: bladeAngleCoef,
+    bladeTiltAngleDeg: bladeTiltAngleDeg,
     widthRatio: widthRatio,
     numBlades: numBlades
   };
@@ -268,15 +280,20 @@ function calcFanWindForce(params) {
 
 if (document.getElementById("calcWindButton")) {
   document.getElementById("calcWindButton").addEventListener("click", function() {
-    const diameter = parseFloat(document.getElementById("bossDiameter").value);
+    const bossDiameter = parseFloat(document.getElementById("bossDiameter").value);
+    const bladeLength = parseFloat(document.getElementById("bladeLength").value);
+    // 風力計算の直径はボス直径ではなく、羽根円直径（ボス直径 + 羽根長さ×2）を使う。
+    const diameter = bossDiameter + bladeLength * 2;
     const rpm = parseFloat(document.getElementById("fanRPM").value);
     const distance = parseFloat(document.getElementById("fanDistance").value);
     const angle = parseFloat(document.getElementById("fanAngle").value);
     const numBlades = parseFloat(document.getElementById("numBlades").value);
     const bladeTopWidth = parseFloat(document.getElementById("bladeTopWidth").value);
     const bladeBottomWidth = parseFloat(document.getElementById("bladeBottomWidth").value);
-    const result = calcFanWindForce({ diameter, rpm, distance, angle, numBlades, bladeTopWidth, bladeBottomWidth });
+    const bladeTiltAngleDeg = parseFloat(document.getElementById("bladeTiltAngleDeg").value);
+    const result = calcFanWindForce({ diameter, rpm, distance, angle, numBlades, bladeTopWidth, bladeBottomWidth, bladeTiltAngleDeg });
     document.getElementById("windResult").innerHTML =
+      `<b>計算に用いた羽根円直径:</b> ${diameter.toFixed(1)} mm<br>` +
       `<b>推力:</b> ${result.thrust.toFixed(2)} N<br>` +
       `<b>羽根面風速:</b> ${result.velocity.toFixed(2)} m/s<br>` +
       `<b>羽根面風量:</b> ${result.volumeFlow.toFixed(1)} m³/h<br>` +
@@ -285,7 +302,8 @@ if (document.getElementById("calcWindButton")) {
       `<b>${distance} m 位置の断面積:</b> ${result.area_x.toFixed(4)} m²<br>` +
       `<b>推力係数Ct:</b> ${result.Ct.toFixed(4)}<br>` +
       `<b>枚数補正:</b> ${result.bladeCountCoef.toFixed(3)}（枚数:${result.numBlades}）<br>` +
-      `<b>形状補正:</b> ${result.bladeShapeCoef.toFixed(3)}（幅比:${result.widthRatio.toFixed(2)}）`;
+      `<b>形状補正:</b> ${result.bladeShapeCoef.toFixed(3)}（幅比:${result.widthRatio.toFixed(2)}）<br>` +
+      `<b>角度補正:</b> ${result.bladeAngleCoef.toFixed(3)}（羽根角:${result.bladeTiltAngleDeg.toFixed(1)}°）`;
   });
 }
 
