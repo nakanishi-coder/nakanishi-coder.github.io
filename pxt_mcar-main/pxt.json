@@ -1,0 +1,31 @@
+{
+    "name": "pxt-mcar",
+    "version": "1.0.0",
+    "description": "mCar robot designed by Siyeenove",
+    "license": "MIT",
+    "dependencies": {
+        "core": "*",
+        "neopixel": "github:mworkfun/pxt-neopixel#v0.6.21"
+    },
+    "files": [
+        "README.md",
+        "main.ts",
+        "IR.cpp",
+        "shims.d.ts",
+        "enums.d.ts",
+        "_locales/zh-cn/pxt-mcar-strings.json",
+        "_locales/ja/pxt-mcar-strings.json"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "public": true,
+    "targetVersions": {
+        "target": "7.0.42",
+        "targetId": "microbit"
+    },
+    "supportedTargets": [
+        "microbit"
+    ],
+    "preferredEditor": "tsprj"
+}
