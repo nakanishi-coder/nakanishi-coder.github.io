@@ -2,14 +2,14 @@
   "name": "HakoForge",
   "short_name": "HakoForge",
   "description": "Browser-based parametric tray and box generator for 3D printing.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#f4f5f2",
   "theme_color": "#4f8f82",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
