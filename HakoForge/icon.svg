@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="HakoForge icon">
+  <rect width="128" height="128" rx="20" fill="#f4f5f2"/>
+  <path d="M24 42 64 22l40 20v44l-40 20-40-20Z" fill="#4f8f82"/>
+  <path d="M24 42 64 62l40-20" fill="none" stroke="#25312e" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M64 62v44" fill="none" stroke="#25312e" stroke-width="8" stroke-linecap="round"/>
+  <path d="M42 58v20l22 11 22-11V58" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+</svg>
