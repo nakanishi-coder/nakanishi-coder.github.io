@@ -1,0 +1,5 @@
+# Keep Jekyll's default dotfile inclusion and the Portable Fan Designer Vite chunk.
+# This exact browser-external filename occurs only in portable_fan_designer/assets.
+include:
+  - .htaccess
+  - __vite-browser-external-BIHI7g3E.js
