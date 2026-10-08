@@ -1,0 +1,1 @@
+const l=()=>{const a=new Map;return{get(t,s){const r=a.get(t),e=r?.get(s);return r?.has(s)&&(r.delete(s),r.set(s,e)),e},set(t,s,r){let e=a.get(t);e||(e=new Map,a.set(t,e)),e.delete(s),e.set(s,r),e.size>2&&e.delete(e.keys().next().value)},values:t=>[...a.get(t)?.values()??[]],size:t=>a.get(t)?.size??0,clear:()=>a.clear()}};export{l as createPartCache};
