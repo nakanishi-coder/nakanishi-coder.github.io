@@ -1,0 +1,2838 @@
+(function(){"use strict";function w(t,n,r=[],e=[]){return{ok:!1,errors:[{code:t,severity:"error",message:n,nodeIds:r,memberIds:e}]}}const Ir={nodes:[{id:"left-support",x:0,y:0,locked:!0},{id:"load-point",x:10,y:0,locked:!0},{id:"right-support",x:20,y:0,locked:!0}]};function Rn(t){if(!Number.isSafeInteger(t)||t<1)throw new Error("節点・部材番号は正の安全な整数にしてください。")}function Dr(t){if(Rn(t),t===Number.MAX_SAFE_INTEGER)throw new Error("節点・部材番号の上限に達しました。操作を中止しました。")}function Gn(t,n){const r=new RegExp(`^${n}-(\\d+)$`);return t.reduce((i,o)=>{const s=o.match(r);if(!s)return i;const l=Number(s[1]);return Dr(l),Math.max(i,l)},0)+1}function Tr(t){return Rn(t.nextNodeNumber),Rn(t.nextMemberNumber),{...t,nextNodeNumber:Math.max(t.nextNodeNumber,Gn(t.nodes.map(n=>n.id),"n")),nextMemberNumber:Math.max(t.nextMemberNumber,Gn(t.members.map(n=>n.id),"m"))}}function Rr(t,n,r){return t.some(e=>e.startNodeId===n&&e.endNodeId===r||e.startNodeId===r&&e.endNodeId===n)}function Vn(t,n,r){return(n.x-t.x)*(r.y-t.y)-(n.y-t.y)*(r.x-t.x)}function wr(t,n,r,e){if(!(Vn(t,n,r)===0&&Vn(t,n,e)===0))return!1;const o=Math.abs(n.x-t.x)>=Math.abs(n.y-t.y),s=o?[t.x,n.x]:[t.y,n.y],l=o?[r.x,e.x]:[r.y,e.y],u=Math.max(Math.min(...s),Math.min(...l));return Math.min(Math.max(...s),Math.max(...l))>u}function vr(t){const n=new Map(t.nodes.map(r=>[r.id,r]));return t.members.some((r,e)=>{const i=n.get(r.startNodeId),o=n.get(r.endNodeId);return!i||!o?!1:t.members.slice(e+1).some(s=>{const l=n.get(s.startNodeId),u=n.get(s.endNodeId);return l&&u&&wr(i,o,l,u)})})}function wn(t){return typeof t=="object"&&t!==null&&!Array.isArray(t)}function Lr(t){return wn(t)&&typeof t.id=="string"&&t.id.length>0&&Number.isInteger(t.x)&&Number.isInteger(t.y)&&typeof t.locked=="boolean"}function $r(t){return wn(t)&&typeof t.id=="string"&&t.id.length>0&&typeof t.startNodeId=="string"&&typeof t.endNodeId=="string"&&typeof t.locked=="boolean"}function Nr(t){return wn(t)&&t.version==="1.0"&&Array.isArray(t.nodes)&&Array.isArray(t.members)&&t.nodes.every(Lr)&&t.members.every($r)}function zn(t,n){if(new Set(t.map(r=>r.id)).size!==t.length)throw new Error(`${n}のIDが重複しています。`)}function Cr(t){for(const e of Ir.nodes){const i=t.nodes.find(o=>o.id===e.id);if(!i||i.x!==e.x||i.y!==e.y||!i.locked)throw new Error("初期節点が不足しているか、変更されています。")}const n=new Map(t.nodes.map(e=>[e.id,e])),r=(e,i,o,s)=>{var f;const l=new Map;for(const c of t.members.filter(a=>a.locked)){const a=n.get(c.startNodeId),d=n.get(c.endNodeId);!a||!d||a.y!==0||d.y!==0||a.x<o||a.x>s||d.x<o||d.x>s||(l.set(a.id,[...l.get(a.id)??[],d.id]),l.set(d.id,[...l.get(d.id)??[],a.id]))}const u=new Set,h=[e];for(;h.length>0;){const c=h.shift();u.has(c)||(u.add(c),(f=l.get(c))==null||f.forEach(a=>h.push(a)))}return u.has(i)};if(!r("left-support","load-point",0,10)||!r("load-point","right-support",10,20))throw new Error("初期部材が不足しているか、変更されています。")}function Or(t){if(!Nr(t))throw new Error("橋モデルの保存形式が正しくありません。");for(const s of[t.nextNodeNumber,t.nextMemberNumber])if(s!==void 0&&(typeof s!="number"||!Number.isSafeInteger(s)||s<1))throw new Error("節点・部材番号は正の安全な整数にしてください。");const n={version:"1.0",nodes:t.nodes.map(s=>({...s})),members:t.members.map(s=>({...s})),nextNodeNumber:typeof t.nextNodeNumber=="number"&&Number.isInteger(t.nextNodeNumber)?t.nextNodeNumber:1,nextMemberNumber:typeof t.nextMemberNumber=="number"&&Number.isInteger(t.nextMemberNumber)?t.nextMemberNumber:1},r=Tr(n);if(zn(r.nodes,"節点"),zn(r.members,"部材"),Cr(r),r.nodes.some(s=>s.x<0||s.x>20||s.y<0||s.y>10))throw new Error("グリッド範囲外の節点があります。");if(new Set(r.nodes.map(s=>`${s.x},${s.y}`)).size!==r.nodes.length)throw new Error("同じ位置に複数の節点があります。");const i=new Set(r.nodes.map(s=>s.id)),o=[];for(const s of r.members){if(!i.has(s.startNodeId)||!i.has(s.endNodeId))throw new Error("存在しない節点を参照する部材があります。");if(s.startNodeId===s.endNodeId)throw new Error("ゼロ長部材があります。");if(Rr(o,s.startNodeId,s.endNodeId))throw new Error("重複部材があります。");o.push(s)}if(vr(r))throw new Error("重なっている部材があります。");return r}const H=11102230246251565e-32,k=134217729,_r=(3+8*H)*H;function vn(t,n,r,e,i){let o,s,l,u,h=n[0],f=e[0],c=0,a=0;f>h==f>-h?(o=h,h=n[++c]):(o=f,f=e[++a]);let d=0;if(c<t&&a<r)for(f>h==f>-h?(s=h+o,l=o-(s-h),h=n[++c]):(s=f+o,l=o-(s-f),f=e[++a]),o=s,l!==0&&(i[d++]=l);c<t&&a<r;)f>h==f>-h?(s=o+h,u=s-o,l=o-(s-u)+(h-u),h=n[++c]):(s=o+f,u=s-o,l=o-(s-u)+(f-u),f=e[++a]),o=s,l!==0&&(i[d++]=l);for(;c<t;)s=o+h,u=s-o,l=o-(s-u)+(h-u),h=n[++c],o=s,l!==0&&(i[d++]=l);for(;a<r;)s=o+f,u=s-o,l=o-(s-u)+(f-u),f=e[++a],o=s,l!==0&&(i[d++]=l);return(o!==0||d===0)&&(i[d++]=o),d}function Pr(t,n){let r=n[0];for(let e=1;e<t;e++)r+=n[e];return r}function hn(t){return new Float64Array(t)}const Br=(3+16*H)*H,kr=(2+12*H)*H,Fr=(9+64*H)*H*H,en=hn(4),Hn=hn(8),Zn=hn(12),jn=hn(16),U=hn(4);function Ur(t,n,r,e,i,o,s){let l,u,h,f,c,a,d,x,g,E,y,M,A,S,D,v,B,$;const _=t-i,O=r-i,T=n-o,m=e-o;S=_*m,a=k*_,d=a-(a-_),x=_-d,a=k*m,g=a-(a-m),E=m-g,D=x*E-(S-d*g-x*g-d*E),v=T*O,a=k*T,d=a-(a-T),x=T-d,a=k*O,g=a-(a-O),E=O-g,B=x*E-(v-d*g-x*g-d*E),y=D-B,c=D-y,en[0]=D-(y+c)+(c-B),M=S+y,c=M-S,A=S-(M-c)+(y-c),y=A-v,c=A-y,en[1]=A-(y+c)+(c-v),$=M+y,c=$-M,en[2]=M-($-c)+(y-c),en[3]=$;let p=Pr(4,en),b=kr*s;if(p>=b||-p>=b||(c=t-_,l=t-(_+c)+(c-i),c=r-O,h=r-(O+c)+(c-i),c=n-T,u=n-(T+c)+(c-o),c=e-m,f=e-(m+c)+(c-o),l===0&&u===0&&h===0&&f===0)||(b=Fr*s+_r*Math.abs(p),p+=_*f+m*l-(T*h+O*u),p>=b||-p>=b))return p;S=l*m,a=k*l,d=a-(a-l),x=l-d,a=k*m,g=a-(a-m),E=m-g,D=x*E-(S-d*g-x*g-d*E),v=u*O,a=k*u,d=a-(a-u),x=u-d,a=k*O,g=a-(a-O),E=O-g,B=x*E-(v-d*g-x*g-d*E),y=D-B,c=D-y,U[0]=D-(y+c)+(c-B),M=S+y,c=M-S,A=S-(M-c)+(y-c),y=A-v,c=A-y,U[1]=A-(y+c)+(c-v),$=M+y,c=$-M,U[2]=M-($-c)+(y-c),U[3]=$;const I=vn(4,en,4,U,Hn);S=_*f,a=k*_,d=a-(a-_),x=_-d,a=k*f,g=a-(a-f),E=f-g,D=x*E-(S-d*g-x*g-d*E),v=T*h,a=k*T,d=a-(a-T),x=T-d,a=k*h,g=a-(a-h),E=h-g,B=x*E-(v-d*g-x*g-d*E),y=D-B,c=D-y,U[0]=D-(y+c)+(c-B),M=S+y,c=M-S,A=S-(M-c)+(y-c),y=A-v,c=A-y,U[1]=A-(y+c)+(c-v),$=M+y,c=$-M,U[2]=M-($-c)+(y-c),U[3]=$;const R=vn(I,Hn,4,U,Zn);S=l*f,a=k*l,d=a-(a-l),x=l-d,a=k*f,g=a-(a-f),E=f-g,D=x*E-(S-d*g-x*g-d*E),v=u*h,a=k*u,d=a-(a-u),x=u-d,a=k*h,g=a-(a-h),E=h-g,B=x*E-(v-d*g-x*g-d*E),y=D-B,c=D-y,U[0]=D-(y+c)+(c-B),M=S+y,c=M-S,A=S-(M-c)+(y-c),y=A-v,c=A-y,U[1]=A-(y+c)+(c-v),$=M+y,c=$-M,U[2]=M-($-c)+(y-c),U[3]=$;const C=vn(R,Zn,4,U,jn);return jn[C-1]}function on(t,n,r,e,i,o){const s=(n-o)*(r-i),l=(t-i)*(e-o),u=s-l,h=Math.abs(s+l);return Math.abs(u)>=Br*h?u:-Ur(t,n,r,e,i,o,h)}const N=1e-9;function nn(t,n,r){return t[0]>=Math.min(n[0],r[0])&&t[0]<=Math.max(n[0],r[0])&&t[1]>=Math.min(n[1],r[1])&&t[1]<=Math.max(n[1],r[1])&&on(n[0],n[1],r[0],r[1],t[0],t[1])===0}function Yr(t,n,r,e){const i=on(t[0],t[1],n[0],n[1],r[0],r[1]),o=on(t[0],t[1],n[0],n[1],e[0],e[1]),s=on(r[0],r[1],e[0],e[1],t[0],t[1]),l=on(r[0],r[1],e[0],e[1],n[0],n[1]);return(i<0&&o>0||i>0&&o<0)&&(s<0&&l>0||s>0&&l<0)||i===0&&nn(r,t,n)||o===0&&nn(e,t,n)||s===0&&nn(t,r,e)||l===0&&nn(n,r,e)}function sn(t,n,r){return(n[0]-t[0])*(r[1]-t[1])-(n[1]-t[1])*(r[0]-t[0])}function X(t,n,r){const e=r[0]-n[0],i=r[1]-n[1],o=e*e+i*i;if(!o)return Math.hypot(t[0]-n[0],t[1]-n[1]);const s=Math.max(0,Math.min(1,((t[0]-n[0])*e+(t[1]-n[1])*i)/o));return Math.hypot(t[0]-n[0]-s*e,t[1]-n[1]-s*i)}function Kn(t,n,r,e){if(Math.max(t[0],n[0])+N<Math.min(r[0],e[0])||Math.max(r[0],e[0])+N<Math.min(t[0],n[0])||Math.max(t[1],n[1])+N<Math.min(r[1],e[1])||Math.max(r[1],e[1])+N<Math.min(t[1],n[1]))return!1;const i=sn(t,n,r),o=sn(t,n,e),s=sn(r,e,t),l=sn(r,e,n);return(i>0&&o<0||i<0&&o>0)&&(s>0&&l<0||s<0&&l>0)?!0:Math.abs(i)<=N&&X(r,t,n)<=N||Math.abs(o)<=N&&X(e,t,n)<=N||Math.abs(s)<=N&&X(t,r,e)<=N||Math.abs(l)<=N&&X(n,r,e)<=N}function Wn(t,n){return Kn(t.start,t.end,n.start,n.end)?0:Math.min(X(t.start,n.start,n.end),X(t.end,n.start,n.end),X(n.start,t.start,t.end),X(n.end,t.start,t.end))}function G(t){if(t.length<3)return 0;let n=0;for(let r=1;r+1<t.length;r++)n+=sn(t[0],t[r],t[r+1]);return n/2}function Z(t,n){let r=!1;for(let e=0,i=n.length-1;e<n.length;i=e++){const o=n[i],s=n[e];if(X(t,o,s)<=N)return 0;o[1]>t[1]!=s[1]>t[1]&&t[0]<(s[0]-o[0])*(t[1]-o[1])/(s[1]-o[1])+o[0]&&(r=!r)}return r?1:-1}function ln(t,n,r){function e(i,o,s){for(let u=0;u<n.length;u++){const h=n[u],f=n[(u+1)%n.length];if(![i,o].some(c=>c[0]<Math.min(h[0],f[0])-r||c[0]>Math.max(h[0],f[0])+r||c[1]<Math.min(h[1],f[1])-r||c[1]>Math.max(h[1],f[1])+r)&&X(i,h,f)<=r&&X(o,h,f)<=r)return!0}if(s>=24)return!1;const l=[(i[0]+o[0])/2,(i[1]+o[1])/2];return n.some((u,h)=>X(l,u,n[(h+1)%n.length])<=r)?e(i,l,s+1)&&e(l,o,s+1):!1}return t.every((i,o)=>e(i,t[(o+1)%t.length],0))}function Xr(t){if(t&&typeof t=="object"&&"members"in t&&Array.isArray(t.members)&&t.members.length>1e3)return w("limit",`部材数は1000本までです（現在${t.members.length}本）。`);let n;try{n=Or(t)}catch(f){return w("invalid-input",f instanceof Error?f.message:"橋モデルが正しくありません。")}const r=new Map(n.nodes.map(f=>[f.id,f])),e=new Map(n.nodes.map(f=>[f.id,new Set])),i=n.members.map(f=>{const c=r.get(f.startNodeId),a=r.get(f.endNodeId);return e.get(c.id).add(a.id),e.get(a.id).add(c.id),{id:f.id,startNodeId:c.id,endNodeId:a.id,start:[c.x*10,c.y*10],end:[a.x*10,a.y*10]}}),o=new Set,s=["left-support"];for(let f=0;f<s.length;f++){const c=s[f];o.has(c)||(o.add(c),s.push(...e.get(c)))}const l=n.nodes.filter(f=>!o.has(f.id)||e.get(f.id).size===0).map(f=>f.id);if(l.length)return w("disconnected","一体出力には全節点・全部材の接続が必要です。未接続の節点・部材を確認してください。",l,i.filter(f=>l.includes(f.startNodeId)||l.includes(f.endNodeId)).map(f=>f.id));for(let f=0;f<i.length;f++)for(let c=f+1;c<i.length;c++){const a=i[f],d=i[c];if(!(a.startNodeId===d.startNodeId||a.startNodeId===d.endNodeId||a.endNodeId===d.startNodeId||a.endNodeId===d.endNodeId)&&Wn(a,d)===0)return w("unjoined-crossing","共通節点のない交差・接触があります。グリッド上の節点で接続するか、部材配置を変更してください。",[],[a.id,d.id])}const u=r.get("left-support"),h=r.get("right-support");return{ok:!0,value:{model:n,segments:i,cycleRank:i.length-n.nodes.length+1,supportSpanMm:Math.hypot(h.x-u.x,h.y-u.y)*10}}}class j{constructor(n,r){this.next=null,this.key=n,this.data=r,this.left=null,this.right=null}}function Gr(t,n){return t>n?1:t<n?-1:0}function K(t,n,r){const e=new j(null,null);let i=e,o=e;for(;;){const s=r(t,n.key);if(s<0){if(n.left===null)break;if(r(t,n.left.key)<0){const l=n.left;if(n.left=l.right,l.right=n,n=l,n.left===null)break}o.left=n,o=n,n=n.left}else if(s>0){if(n.right===null)break;if(r(t,n.right.key)>0){const l=n.right;if(n.right=l.left,l.left=n,n=l,n.right===null)break}i.right=n,i=n,n=n.right}else break}return i.right=n.left,o.left=n.right,n.left=e.right,n.right=e.left,n}function Ln(t,n,r,e){const i=new j(t,n);if(r===null)return i.left=i.right=null,i;r=K(t,r,e);const o=e(t,r.key);return o<0?(i.left=r.left,i.right=r,r.left=null):o>=0&&(i.right=r.right,i.left=r,r.right=null),i}function qn(t,n,r){let e=null,i=null;if(n){n=K(t,n,r);const o=r(n.key,t);o===0?(e=n.left,i=n.right):o<0?(i=n.right,n.right=null,e=n):(e=n.left,n.left=null,i=n)}return{left:e,right:i}}function Vr(t,n,r){return n===null?t:(t===null||(n=K(t.key,n,r),n.left=t),n)}function $n(t,n,r,e,i){if(t){e(`${n}${r?"└── ":"├── "}${i(t)}
+`);const o=n+(r?"    ":"│   ");t.left&&$n(t.left,o,!1,e,i),t.right&&$n(t.right,o,!0,e,i)}}class Nn{constructor(n=Gr){this._root=null,this._size=0,this._comparator=n}insert(n,r){return this._size++,this._root=Ln(n,r,this._root,this._comparator)}add(n,r){const e=new j(n,r);this._root===null&&(e.left=e.right=null,this._size++,this._root=e);const i=this._comparator,o=K(n,this._root,i),s=i(n,o.key);return s===0?this._root=o:(s<0?(e.left=o.left,e.right=o,o.left=null):s>0&&(e.right=o.right,e.left=o,o.right=null),this._size++,this._root=e),this._root}remove(n){this._root=this._remove(n,this._root,this._comparator)}_remove(n,r,e){let i;return r===null?null:(r=K(n,r,e),e(n,r.key)===0?(r.left===null?i=r.right:(i=K(n,r.left,e),i.right=r.right),this._size--,i):r)}pop(){let n=this._root;if(n){for(;n.left;)n=n.left;return this._root=K(n.key,this._root,this._comparator),this._root=this._remove(n.key,this._root,this._comparator),{key:n.key,data:n.data}}return null}findStatic(n){let r=this._root;const e=this._comparator;for(;r;){const i=e(n,r.key);if(i===0)return r;i<0?r=r.left:r=r.right}return null}find(n){return this._root&&(this._root=K(n,this._root,this._comparator),this._comparator(n,this._root.key)!==0)?null:this._root}contains(n){let r=this._root;const e=this._comparator;for(;r;){const i=e(n,r.key);if(i===0)return!0;i<0?r=r.left:r=r.right}return!1}forEach(n,r){let e=this._root;const i=[];let o=!1;for(;!o;)e!==null?(i.push(e),e=e.left):i.length!==0?(e=i.pop(),n.call(r,e),e=e.right):o=!0;return this}range(n,r,e,i){const o=[],s=this._comparator;let l=this._root,u;for(;o.length!==0||l;)if(l)o.push(l),l=l.left;else{if(l=o.pop(),u=s(l.key,r),u>0)break;if(s(l.key,n)>=0&&e.call(i,l))return this;l=l.right}return this}keys(){const n=[];return this.forEach(({key:r})=>{n.push(r)}),n}values(){const n=[];return this.forEach(({data:r})=>{n.push(r)}),n}min(){return this._root?this.minNode(this._root).key:null}max(){return this._root?this.maxNode(this._root).key:null}minNode(n=this._root){if(n)for(;n.left;)n=n.left;return n}maxNode(n=this._root){if(n)for(;n.right;)n=n.right;return n}at(n){let r=this._root,e=!1,i=0;const o=[];for(;!e;)if(r)o.push(r),r=r.left;else if(o.length>0){if(r=o.pop(),i===n)return r;i++,r=r.right}else e=!0;return null}next(n){let r=this._root,e=null;if(n.right){for(e=n.right;e.left;)e=e.left;return e}const i=this._comparator;for(;r;){const o=i(n.key,r.key);if(o===0)break;o<0?(e=r,r=r.left):r=r.right}return e}prev(n){let r=this._root,e=null;if(n.left!==null){for(e=n.left;e.right;)e=e.right;return e}const i=this._comparator;for(;r;){const o=i(n.key,r.key);if(o===0)break;o<0?r=r.left:(e=r,r=r.right)}return e}clear(){return this._root=null,this._size=0,this}toList(){return Hr(this._root)}load(n,r=[],e=!1){let i=n.length;const o=this._comparator;if(e&&_n(n,r,0,i-1,o),this._root===null)this._root=Cn(n,r,0,i),this._size=i;else{const s=Zr(this.toList(),zr(n,r),o);i=this._size+i,this._root=On({head:s},0,i)}return this}isEmpty(){return this._root===null}get size(){return this._size}get root(){return this._root}toString(n=r=>String(r.key)){const r=[];return $n(this._root,"",!0,e=>r.push(e),n),r.join("")}update(n,r,e){const i=this._comparator;let{left:o,right:s}=qn(n,this._root,i);i(n,r)<0?s=Ln(r,e,s,i):o=Ln(r,e,o,i),this._root=Vr(o,s,i)}split(n){return qn(n,this._root,this._comparator)}*[Symbol.iterator](){let n=this._root;const r=[];let e=!1;for(;!e;)n!==null?(r.push(n),n=n.left):r.length!==0?(n=r.pop(),yield n,n=n.right):e=!0}}function Cn(t,n,r,e){const i=e-r;if(i>0){const o=r+Math.floor(i/2),s=t[o],l=n[o],u=new j(s,l);return u.left=Cn(t,n,r,o),u.right=Cn(t,n,o+1,e),u}return null}function zr(t,n){const r=new j(null,null);let e=r;for(let i=0;i<t.length;i++)e=e.next=new j(t[i],n[i]);return e.next=null,r.next}function Hr(t){let n=t;const r=[];let e=!1;const i=new j(null,null);let o=i;for(;!e;)n?(r.push(n),n=n.left):r.length>0?(n=o=o.next=r.pop(),n=n.right):e=!0;return o.next=null,i.next}function On(t,n,r){const e=r-n;if(e>0){const i=n+Math.floor(e/2),o=On(t,n,i),s=t.head;return s.left=o,t.head=t.head.next,s.right=On(t,i+1,r),s}return null}function Zr(t,n,r){const e=new j(null,null);let i=e,o=t,s=n;for(;o!==null&&s!==null;)r(o.key,s.key)<0?(i.next=o,o=o.next):(i.next=s,s=s.next),i=i.next;return o!==null?i.next=o:s!==null&&(i.next=s),e.next}function _n(t,n,r,e,i){if(r>=e)return;const o=t[r+e>>1];let s=r-1,l=e+1;for(;;){do s++;while(i(t[s],o)<0);do l--;while(i(t[l],o)>0);if(s>=l)break;let u=t[s];t[s]=t[l],t[l]=u,u=n[s],n[s]=n[l],n[l]=u}_n(t,n,r,l,i),_n(t,n,l+1,e,i)}var Qn={};const fn=(t,n)=>t.ll.x<=n.x&&n.x<=t.ur.x&&t.ll.y<=n.y&&n.y<=t.ur.y,Pn=(t,n)=>{if(n.ur.x<t.ll.x||t.ur.x<n.ll.x||n.ur.y<t.ll.y||t.ur.y<n.ll.y)return null;const r=t.ll.x<n.ll.x?n.ll.x:t.ll.x,e=t.ur.x<n.ur.x?t.ur.x:n.ur.x,i=t.ll.y<n.ll.y?n.ll.y:t.ll.y,o=t.ur.y<n.ur.y?t.ur.y:n.ur.y;return{ll:{x:r,y:i},ur:{x:e,y:o}}};let W=Number.EPSILON;W===void 0&&(W=Math.pow(2,-52));const jr=W*W,Jn=(t,n)=>{if(-W<t&&t<W&&-W<n&&n<W)return 0;const r=t-n;return r*r<jr*t*n?0:t<n?-1:1};class Kr{constructor(){this.reset()}reset(){this.xRounder=new nr,this.yRounder=new nr}round(n,r){return{x:this.xRounder.round(n),y:this.yRounder.round(r)}}}class nr{constructor(){this.tree=new Nn,this.round(0)}round(n){const r=this.tree.add(n),e=this.tree.prev(r);if(e!==null&&Jn(r.key,e.key)===0)return this.tree.remove(n),e.key;const i=this.tree.next(r);return i!==null&&Jn(r.key,i.key)===0?(this.tree.remove(n),i.key):n}}const dn=new Kr,yn=(t,n)=>t.x*n.y-t.y*n.x,rr=(t,n)=>t.x*n.x+t.y*n.y,tr=(t,n,r)=>{const e=on(t.x,t.y,n.x,n.y,r.x,r.y);return e>0?-1:e<0?1:0},Sn=t=>Math.sqrt(rr(t,t)),Wr=(t,n,r)=>{const e={x:n.x-t.x,y:n.y-t.y},i={x:r.x-t.x,y:r.y-t.y};return yn(i,e)/Sn(i)/Sn(e)},qr=(t,n,r)=>{const e={x:n.x-t.x,y:n.y-t.y},i={x:r.x-t.x,y:r.y-t.y};return rr(i,e)/Sn(i)/Sn(e)},er=(t,n,r)=>n.y===0?null:{x:t.x+n.x/n.y*(r-t.y),y:r},ir=(t,n,r)=>n.x===0?null:{x:r,y:t.y+n.y/n.x*(r-t.x)},Qr=(t,n,r,e)=>{if(n.x===0)return ir(r,e,t.x);if(e.x===0)return ir(t,n,r.x);if(n.y===0)return er(r,e,t.y);if(e.y===0)return er(t,n,r.y);const i=yn(n,e);if(i==0)return null;const o={x:r.x-t.x,y:r.y-t.y},s=yn(o,n)/i,l=yn(o,e)/i,u=t.x+l*n.x,h=r.x+s*e.x,f=t.y+l*n.y,c=r.y+s*e.y,a=(u+h)/2,d=(f+c)/2;return{x:a,y:d}};class V{static compare(n,r){const e=V.comparePoints(n.point,r.point);return e!==0?e:(n.point!==r.point&&n.link(r),n.isLeft!==r.isLeft?n.isLeft?1:-1:q.compare(n.segment,r.segment))}static comparePoints(n,r){return n.x<r.x?-1:n.x>r.x?1:n.y<r.y?-1:n.y>r.y?1:0}constructor(n,r){n.events===void 0?n.events=[this]:n.events.push(this),this.point=n,this.isLeft=r}link(n){if(n.point===this.point)throw new Error("Tried to link already linked events");const r=n.point.events;for(let e=0,i=r.length;e<i;e++){const o=r[e];this.point.events.push(o),o.point=this.point}this.checkForConsuming()}checkForConsuming(){const n=this.point.events.length;for(let r=0;r<n;r++){const e=this.point.events[r];if(e.segment.consumedBy===void 0)for(let i=r+1;i<n;i++){const o=this.point.events[i];o.consumedBy===void 0&&e.otherSE.point.events===o.otherSE.point.events&&e.segment.consume(o.segment)}}}getAvailableLinkedEvents(){const n=[];for(let r=0,e=this.point.events.length;r<e;r++){const i=this.point.events[r];i!==this&&!i.segment.ringOut&&i.segment.isInResult()&&n.push(i)}return n}getLeftmostComparator(n){const r=new Map,e=i=>{const o=i.otherSE;r.set(i,{sine:Wr(this.point,n.point,o.point),cosine:qr(this.point,n.point,o.point)})};return(i,o)=>{r.has(i)||e(i),r.has(o)||e(o);const{sine:s,cosine:l}=r.get(i),{sine:u,cosine:h}=r.get(o);return s>=0&&u>=0?l<h?1:l>h?-1:0:s<0&&u<0?l<h?-1:l>h?1:0:u<s?-1:u>s?1:0}}}let Jr=0;class q{static compare(n,r){const e=n.leftSE.point.x,i=r.leftSE.point.x,o=n.rightSE.point.x,s=r.rightSE.point.x;if(s<e)return 1;if(o<i)return-1;const l=n.leftSE.point.y,u=r.leftSE.point.y,h=n.rightSE.point.y,f=r.rightSE.point.y;if(e<i){if(u<l&&u<h)return 1;if(u>l&&u>h)return-1;const c=n.comparePoint(r.leftSE.point);if(c<0)return 1;if(c>0)return-1;const a=r.comparePoint(n.rightSE.point);return a!==0?a:-1}if(e>i){if(l<u&&l<f)return-1;if(l>u&&l>f)return 1;const c=r.comparePoint(n.leftSE.point);if(c!==0)return c;const a=n.comparePoint(r.rightSE.point);return a<0?1:a>0?-1:1}if(l<u)return-1;if(l>u)return 1;if(o<s){const c=r.comparePoint(n.rightSE.point);if(c!==0)return c}if(o>s){const c=n.comparePoint(r.rightSE.point);if(c<0)return 1;if(c>0)return-1}if(o!==s){const c=h-l,a=o-e,d=f-u,x=s-i;if(c>a&&d<x)return 1;if(c<a&&d>x)return-1}return o>s?1:o<s||h<f?-1:h>f?1:n.id<r.id?-1:n.id>r.id?1:0}constructor(n,r,e,i){this.id=++Jr,this.leftSE=n,n.segment=this,n.otherSE=r,this.rightSE=r,r.segment=this,r.otherSE=n,this.rings=e,this.windings=i}static fromRing(n,r,e){let i,o,s;const l=V.comparePoints(n,r);if(l<0)i=n,o=r,s=1;else if(l>0)i=r,o=n,s=-1;else throw new Error(`Tried to create degenerate segment at [${n.x}, ${n.y}]`);const u=new V(i,!0),h=new V(o,!1);return new q(u,h,[e],[s])}replaceRightSE(n){this.rightSE=n,this.rightSE.segment=this,this.rightSE.otherSE=this.leftSE,this.leftSE.otherSE=this.rightSE}bbox(){const n=this.leftSE.point.y,r=this.rightSE.point.y;return{ll:{x:this.leftSE.point.x,y:n<r?n:r},ur:{x:this.rightSE.point.x,y:n>r?n:r}}}vector(){return{x:this.rightSE.point.x-this.leftSE.point.x,y:this.rightSE.point.y-this.leftSE.point.y}}isAnEndpoint(n){return n.x===this.leftSE.point.x&&n.y===this.leftSE.point.y||n.x===this.rightSE.point.x&&n.y===this.rightSE.point.y}comparePoint(n){if(this.isAnEndpoint(n))return 0;const r=this.leftSE.point,e=this.rightSE.point,i=this.vector();if(r.x===e.x)return n.x===r.x?0:n.x<r.x?1:-1;const o=(n.y-r.y)/i.y,s=r.x+o*i.x;if(n.x===s)return 0;const l=(n.x-r.x)/i.x,u=r.y+l*i.y;return n.y===u?0:n.y<u?-1:1}getIntersection(n){const r=this.bbox(),e=n.bbox(),i=Pn(r,e);if(i===null)return null;const o=this.leftSE.point,s=this.rightSE.point,l=n.leftSE.point,u=n.rightSE.point,h=fn(r,l)&&this.comparePoint(l)===0,f=fn(e,o)&&n.comparePoint(o)===0,c=fn(r,u)&&this.comparePoint(u)===0,a=fn(e,s)&&n.comparePoint(s)===0;if(f&&h)return a&&!c?s:!a&&c?u:null;if(f)return c&&o.x===u.x&&o.y===u.y?null:o;if(h)return a&&s.x===l.x&&s.y===l.y?null:l;if(a&&c)return null;if(a)return s;if(c)return u;const d=Qr(o,this.vector(),l,n.vector());return d===null||!fn(i,d)?null:dn.round(d.x,d.y)}split(n){const r=[],e=n.events!==void 0,i=new V(n,!0),o=new V(n,!1),s=this.rightSE;this.replaceRightSE(o),r.push(o),r.push(i);const l=new q(i,s,this.rings.slice(),this.windings.slice());return V.comparePoints(l.leftSE.point,l.rightSE.point)>0&&l.swapEvents(),V.comparePoints(this.leftSE.point,this.rightSE.point)>0&&this.swapEvents(),e&&(i.checkForConsuming(),o.checkForConsuming()),r}swapEvents(){const n=this.rightSE;this.rightSE=this.leftSE,this.leftSE=n,this.leftSE.isLeft=!0,this.rightSE.isLeft=!1;for(let r=0,e=this.windings.length;r<e;r++)this.windings[r]*=-1}consume(n){let r=this,e=n;for(;r.consumedBy;)r=r.consumedBy;for(;e.consumedBy;)e=e.consumedBy;const i=q.compare(r,e);if(i!==0){if(i>0){const o=r;r=e,e=o}if(r.prev===e){const o=r;r=e,e=o}for(let o=0,s=e.rings.length;o<s;o++){const l=e.rings[o],u=e.windings[o],h=r.rings.indexOf(l);h===-1?(r.rings.push(l),r.windings.push(u)):r.windings[h]+=u}e.rings=null,e.windings=null,e.consumedBy=r,e.leftSE.consumedBy=r.leftSE,e.rightSE.consumedBy=r.rightSE}}prevInResult(){return this._prevInResult!==void 0?this._prevInResult:(this.prev?this.prev.isInResult()?this._prevInResult=this.prev:this._prevInResult=this.prev.prevInResult():this._prevInResult=null,this._prevInResult)}beforeState(){if(this._beforeState!==void 0)return this._beforeState;if(!this.prev)this._beforeState={rings:[],windings:[],multiPolys:[]};else{const n=this.prev.consumedBy||this.prev;this._beforeState=n.afterState()}return this._beforeState}afterState(){if(this._afterState!==void 0)return this._afterState;const n=this.beforeState();this._afterState={rings:n.rings.slice(0),windings:n.windings.slice(0),multiPolys:[]};const r=this._afterState.rings,e=this._afterState.windings,i=this._afterState.multiPolys;for(let l=0,u=this.rings.length;l<u;l++){const h=this.rings[l],f=this.windings[l],c=r.indexOf(h);c===-1?(r.push(h),e.push(f)):e[c]+=f}const o=[],s=[];for(let l=0,u=r.length;l<u;l++){if(e[l]===0)continue;const h=r[l],f=h.poly;if(s.indexOf(f)===-1)if(h.isExterior)o.push(f);else{s.indexOf(f)===-1&&s.push(f);const c=o.indexOf(h.poly);c!==-1&&o.splice(c,1)}}for(let l=0,u=o.length;l<u;l++){const h=o[l].multiPoly;i.indexOf(h)===-1&&i.push(h)}return this._afterState}isInResult(){if(this.consumedBy)return!1;if(this._isInResult!==void 0)return this._isInResult;const n=this.beforeState().multiPolys,r=this.afterState().multiPolys;switch(z.type){case"union":{const e=n.length===0,i=r.length===0;this._isInResult=e!==i;break}case"intersection":{let e,i;n.length<r.length?(e=n.length,i=r.length):(e=r.length,i=n.length),this._isInResult=i===z.numMultiPolys&&e<i;break}case"xor":{const e=Math.abs(n.length-r.length);this._isInResult=e%2===1;break}case"difference":{const e=i=>i.length===1&&i[0].isSubject;this._isInResult=e(n)!==e(r);break}default:throw new Error(`Unrecognized operation type found ${z.type}`)}return this._isInResult}}class or{constructor(n,r,e){if(!Array.isArray(n)||n.length===0)throw new Error("Input geometry is not a valid Polygon or MultiPolygon");if(this.poly=r,this.isExterior=e,this.segments=[],typeof n[0][0]!="number"||typeof n[0][1]!="number")throw new Error("Input geometry is not a valid Polygon or MultiPolygon");const i=dn.round(n[0][0],n[0][1]);this.bbox={ll:{x:i.x,y:i.y},ur:{x:i.x,y:i.y}};let o=i;for(let s=1,l=n.length;s<l;s++){if(typeof n[s][0]!="number"||typeof n[s][1]!="number")throw new Error("Input geometry is not a valid Polygon or MultiPolygon");let u=dn.round(n[s][0],n[s][1]);u.x===o.x&&u.y===o.y||(this.segments.push(q.fromRing(o,u,this)),u.x<this.bbox.ll.x&&(this.bbox.ll.x=u.x),u.y<this.bbox.ll.y&&(this.bbox.ll.y=u.y),u.x>this.bbox.ur.x&&(this.bbox.ur.x=u.x),u.y>this.bbox.ur.y&&(this.bbox.ur.y=u.y),o=u)}(i.x!==o.x||i.y!==o.y)&&this.segments.push(q.fromRing(o,i,this))}getSweepEvents(){const n=[];for(let r=0,e=this.segments.length;r<e;r++){const i=this.segments[r];n.push(i.leftSE),n.push(i.rightSE)}return n}}class nt{constructor(n,r){if(!Array.isArray(n))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");this.exteriorRing=new or(n[0],this,!0),this.bbox={ll:{x:this.exteriorRing.bbox.ll.x,y:this.exteriorRing.bbox.ll.y},ur:{x:this.exteriorRing.bbox.ur.x,y:this.exteriorRing.bbox.ur.y}},this.interiorRings=[];for(let e=1,i=n.length;e<i;e++){const o=new or(n[e],this,!1);o.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=o.bbox.ll.x),o.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=o.bbox.ll.y),o.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=o.bbox.ur.x),o.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=o.bbox.ur.y),this.interiorRings.push(o)}this.multiPoly=r}getSweepEvents(){const n=this.exteriorRing.getSweepEvents();for(let r=0,e=this.interiorRings.length;r<e;r++){const i=this.interiorRings[r].getSweepEvents();for(let o=0,s=i.length;o<s;o++)n.push(i[o])}return n}}class sr{constructor(n,r){if(!Array.isArray(n))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");try{typeof n[0][0][0]=="number"&&(n=[n])}catch{}this.polys=[],this.bbox={ll:{x:Number.POSITIVE_INFINITY,y:Number.POSITIVE_INFINITY},ur:{x:Number.NEGATIVE_INFINITY,y:Number.NEGATIVE_INFINITY}};for(let e=0,i=n.length;e<i;e++){const o=new nt(n[e],this);o.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=o.bbox.ll.x),o.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=o.bbox.ll.y),o.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=o.bbox.ur.x),o.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=o.bbox.ur.y),this.polys.push(o)}this.isSubject=r}getSweepEvents(){const n=[];for(let r=0,e=this.polys.length;r<e;r++){const i=this.polys[r].getSweepEvents();for(let o=0,s=i.length;o<s;o++)n.push(i[o])}return n}}class An{static factory(n){const r=[];for(let e=0,i=n.length;e<i;e++){const o=n[e];if(!o.isInResult()||o.ringOut)continue;let s=null,l=o.leftSE,u=o.rightSE;const h=[l],f=l.point,c=[];for(;s=l,l=u,h.push(l),l.point!==f;)for(;;){const a=l.getAvailableLinkedEvents();if(a.length===0){const g=h[0].point,E=h[h.length-1].point;throw new Error(`Unable to complete output ring starting at [${g.x}, ${g.y}]. Last matching segment found ends at [${E.x}, ${E.y}].`)}if(a.length===1){u=a[0].otherSE;break}let d=null;for(let g=0,E=c.length;g<E;g++)if(c[g].point===l.point){d=g;break}if(d!==null){const g=c.splice(d)[0],E=h.splice(g.index);E.unshift(E[0].otherSE),r.push(new An(E.reverse()));continue}c.push({index:h.length,point:l.point});const x=l.getLeftmostComparator(s);u=a.sort(x)[0].otherSE;break}r.push(new An(h))}return r}constructor(n){this.events=n;for(let r=0,e=n.length;r<e;r++)n[r].segment.ringOut=this;this.poly=null}getGeom(){let n=this.events[0].point;const r=[n];for(let h=1,f=this.events.length-1;h<f;h++){const c=this.events[h].point,a=this.events[h+1].point;tr(c,n,a)!==0&&(r.push(c),n=c)}if(r.length===1)return null;const e=r[0],i=r[1];tr(e,n,i)===0&&r.shift(),r.push(r[0]);const o=this.isExteriorRing()?1:-1,s=this.isExteriorRing()?0:r.length-1,l=this.isExteriorRing()?r.length:-1,u=[];for(let h=s;h!=l;h+=o)u.push([r[h].x,r[h].y]);return u}isExteriorRing(){if(this._isExteriorRing===void 0){const n=this.enclosingRing();this._isExteriorRing=n?!n.isExteriorRing():!0}return this._isExteriorRing}enclosingRing(){return this._enclosingRing===void 0&&(this._enclosingRing=this._calcEnclosingRing()),this._enclosingRing}_calcEnclosingRing(){let n=this.events[0];for(let i=1,o=this.events.length;i<o;i++){const s=this.events[i];V.compare(n,s)>0&&(n=s)}let r=n.segment.prevInResult(),e=r?r.prevInResult():null;for(;;){if(!r)return null;if(!e)return r.ringOut;if(e.ringOut!==r.ringOut)return e.ringOut.enclosingRing()!==r.ringOut?r.ringOut:r.ringOut.enclosingRing();r=e.prevInResult(),e=r?r.prevInResult():null}}}class lr{constructor(n){this.exteriorRing=n,n.poly=this,this.interiorRings=[]}addInterior(n){this.interiorRings.push(n),n.poly=this}getGeom(){const n=[this.exteriorRing.getGeom()];if(n[0]===null)return null;for(let r=0,e=this.interiorRings.length;r<e;r++){const i=this.interiorRings[r].getGeom();i!==null&&n.push(i)}return n}}class rt{constructor(n){this.rings=n,this.polys=this._composePolys(n)}getGeom(){const n=[];for(let r=0,e=this.polys.length;r<e;r++){const i=this.polys[r].getGeom();i!==null&&n.push(i)}return n}_composePolys(n){const r=[];for(let e=0,i=n.length;e<i;e++){const o=n[e];if(!o.poly)if(o.isExteriorRing())r.push(new lr(o));else{const s=o.enclosingRing();s.poly||r.push(new lr(s)),s.poly.addInterior(o)}}return r}}class tt{constructor(n){let r=arguments.length>1&&arguments[1]!==void 0?arguments[1]:q.compare;this.queue=n,this.tree=new Nn(r),this.segments=[]}process(n){const r=n.segment,e=[];if(n.consumedBy)return n.isLeft?this.queue.remove(n.otherSE):this.tree.remove(r),e;const i=n.isLeft?this.tree.add(r):this.tree.find(r);if(!i)throw new Error(`Unable to find segment #${r.id} [${r.leftSE.point.x}, ${r.leftSE.point.y}] -> [${r.rightSE.point.x}, ${r.rightSE.point.y}] in SweepLine tree.`);let o=i,s=i,l,u;for(;l===void 0;)o=this.tree.prev(o),o===null?l=null:o.key.consumedBy===void 0&&(l=o.key);for(;u===void 0;)s=this.tree.next(s),s===null?u=null:s.key.consumedBy===void 0&&(u=s.key);if(n.isLeft){let h=null;if(l){const c=l.getIntersection(r);if(c!==null&&(r.isAnEndpoint(c)||(h=c),!l.isAnEndpoint(c))){const a=this._splitSafely(l,c);for(let d=0,x=a.length;d<x;d++)e.push(a[d])}}let f=null;if(u){const c=u.getIntersection(r);if(c!==null&&(r.isAnEndpoint(c)||(f=c),!u.isAnEndpoint(c))){const a=this._splitSafely(u,c);for(let d=0,x=a.length;d<x;d++)e.push(a[d])}}if(h!==null||f!==null){let c=null;h===null?c=f:f===null?c=h:c=V.comparePoints(h,f)<=0?h:f,this.queue.remove(r.rightSE),e.push(r.rightSE);const a=r.split(c);for(let d=0,x=a.length;d<x;d++)e.push(a[d])}e.length>0?(this.tree.remove(r),e.push(n)):(this.segments.push(r),r.prev=l)}else{if(l&&u){const h=l.getIntersection(u);if(h!==null){if(!l.isAnEndpoint(h)){const f=this._splitSafely(l,h);for(let c=0,a=f.length;c<a;c++)e.push(f[c])}if(!u.isAnEndpoint(h)){const f=this._splitSafely(u,h);for(let c=0,a=f.length;c<a;c++)e.push(f[c])}}}this.tree.remove(r)}return e}_splitSafely(n,r){this.tree.remove(n);const e=n.rightSE;this.queue.remove(e);const i=n.split(r);return i.push(e),n.consumedBy===void 0&&this.tree.add(n),i}}const cr=typeof process<"u"&&Qn.POLYGON_CLIPPING_MAX_QUEUE_SIZE||1e6,et=typeof process<"u"&&Qn.POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS||1e6;class it{run(n,r,e){z.type=n,dn.reset();const i=[new sr(r,!0)];for(let c=0,a=e.length;c<a;c++)i.push(new sr(e[c],!1));if(z.numMultiPolys=i.length,z.type==="difference"){const c=i[0];let a=1;for(;a<i.length;)Pn(i[a].bbox,c.bbox)!==null?a++:i.splice(a,1)}if(z.type==="intersection")for(let c=0,a=i.length;c<a;c++){const d=i[c];for(let x=c+1,g=i.length;x<g;x++)if(Pn(d.bbox,i[x].bbox)===null)return[]}const o=new Nn(V.compare);for(let c=0,a=i.length;c<a;c++){const d=i[c].getSweepEvents();for(let x=0,g=d.length;x<g;x++)if(o.insert(d[x]),o.size>cr)throw new Error("Infinite loop when putting segment endpoints in a priority queue (queue size too big).")}const s=new tt(o);let l=o.size,u=o.pop();for(;u;){const c=u.key;if(o.size===l){const d=c.segment;throw new Error(`Unable to pop() ${c.isLeft?"left":"right"} SweepEvent [${c.point.x}, ${c.point.y}] from segment #${d.id} [${d.leftSE.point.x}, ${d.leftSE.point.y}] -> [${d.rightSE.point.x}, ${d.rightSE.point.y}] from queue.`)}if(o.size>cr)throw new Error("Infinite loop when passing sweep line over endpoints (queue size too big).");if(s.segments.length>et)throw new Error("Infinite loop when passing sweep line over endpoints (too many sweep line segments).");const a=s.process(c);for(let d=0,x=a.length;d<x;d++){const g=a[d];g.consumedBy===void 0&&o.insert(g)}l=o.size,u=o.pop()}dn.reset();const h=An.factory(s.segments);return new rt(h).getGeom()}}const z=new it;var ot={union:function(t){for(var n=arguments.length,r=new Array(n>1?n-1:0),e=1;e<n;e++)r[e-1]=arguments[e];return z.run("union",t,r)},intersection:function(t){for(var n=arguments.length,r=new Array(n>1?n-1:0),e=1;e<n;e++)r[e-1]=arguments[e];return z.run("intersection",t,r)},xor:function(t){for(var n=arguments.length,r=new Array(n>1?n-1:0),e=1;e<n;e++)r[e-1]=arguments[e];return z.run("xor",t,r)},difference:function(t){for(var n=arguments.length,r=new Array(n>1?n-1:0),e=1;e<n;e++)r[e-1]=arguments[e];return z.run("difference",t,r)}};function ur(t,n){const r=t.trim(),e=/^\+?(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/.exec(r),i=Number(r);if(!e||!Number.isFinite(i)||i<n||i>20)return null;const o=e[2]??e[3]??"";let s=((e[1]??"0")+o).replace(/^0+/,"")||"0";const l=Number(e[4]??0)-o.length+1;if(!Number.isSafeInteger(l))return null;if(l>=0){if(s.length+l>3)return null;s+="0".repeat(l)}else{const h=s.length+l;if(h<=0||/[1-9]/.test(s.slice(h)))return null;s=s.slice(0,h)}const u=Number(s);return Number.isSafeInteger(u)&&u>=n*10&&u<=200?u/10:null}function Bn(t){if(!t||t.format!=="dxf"&&t.format!=="stl"||typeof t.widthText!="string")return w("invalid-input","出力形式と部材幅を確認してください。");const n=ur(t.widthText,1);if(n===null)return w("invalid-input","部材幅は1.0〜20.0mmを0.1mm刻みで入力してください。");if(t.format==="dxf")return{ok:!0,value:{format:"dxf",widthMm:n}};const r=typeof t.thicknessText=="string"?ur(t.thicknessText,.5):null;return r===null?w("invalid-input","厚みは0.5〜20.0mmを0.1mm刻みで入力してください。"):{ok:!0,value:{format:"stl",widthMm:n,thicknessMm:r}}}function cn(t){const n=()=>w("invalid-profile","加工輪郭に交差・接触・欠落、または不正な寸法があります。幅かモデルを見直してください。");if(!t||!Array.isArray(t.outer)||!Array.isArray(t.holes)||!t.holes.every(Array.isArray))return n();const r=[t.outer,...t.holes],e=r.reduce((a,d)=>a+d.length,0);if(e>5e4)return w("limit",`輪郭の頂点は50000個までです（現在${e}個）。`);if(!t.bounds||![t.widthMm,t.areaMm2,t.bounds.widthMm,t.bounds.heightMm,t.supportSpanMm,...t.offsetMm].every(Number.isFinite)||t.widthMm<=0||t.areaMm2<=0||t.bounds.widthMm<=0||t.bounds.heightMm<=0)return n();const i=r.flat();if(r.some(a=>a.length<3||a.some(d=>!Array.isArray(d)||d.length!==2||!d.every(Number.isFinite))))return n();const o=G(t.outer),s=t.holes.map(G);if(o<=N||s.some(a=>a>=-N))return n();const l=o+s.reduce((a,d)=>a+d,0);if(Math.abs(l-t.areaMm2)>Math.max(1e-8,l*1e-8))return n();const u=i.map(a=>a[0]),h=i.map(a=>a[1]);if(Math.abs(Math.min(...u))>1e-8||Math.abs(Math.min(...h))>1e-8||Math.abs(Math.max(...u)-t.bounds.widthMm)>1e-8||Math.abs(Math.max(...h)-t.bounds.heightMm)>1e-8)return n();const f=[];for(const[a,d]of r.entries())for(let x=0;x<d.length;x++){const g=d[x],E=d[(x+1)%d.length];if(Math.hypot(g[0]-E[0],g[1]-E[1])<=N)return n();f.push({a:g,b:E,ring:a,index:x,minX:Math.min(g[0],E[0]),maxX:Math.max(g[0],E[0]),minY:Math.min(g[1],E[1]),maxY:Math.max(g[1],E[1])})}f.sort((a,d)=>a.minX-d.minX);let c=[];for(const a of f){c=c.filter(d=>d.maxX+N>=a.minX);for(const d of c)if(!(d.maxY+N<a.minY||a.maxY+N<d.minY)){if(a.ring===d.ring){const x=Math.abs(a.index-d.index);if(x===1||x===r[a.ring].length-1)continue}if(Kn(a.a,a.b,d.a,d.b))return n()}c.push(a)}for(let a=0;a<t.holes.length;a++){const d=t.holes[a];if(Z(d[0],t.outer)!==1)return n();for(let x=a+1;x<t.holes.length;x++)if(Z(d[0],t.holes[x])>=0||Z(t.holes[x][0],d)>=0)return n()}return{ok:!0,value:t}}function st(t,n){const r=()=>w("precision-loss","近似精度の範囲で穴や接続が変化します。部材幅またはモデルを見直してください。");if(!cn(t).ok||!cn(n).ok||t.holes.length!==n.holes.length)return r();const e=.01-1e-4;if(!ln(t.outer,n.outer,e)||!ln(n.outer,t.outer,e))return r();const i=new Set;for(const o of n.holes){const s=t.holes.findIndex((l,u)=>!i.has(u)&&o.every(h=>Z(h,l)>=0));if(s<0||!ln(t.holes[s],o,e)||!ln(o,t.holes[s],e))return r();i.add(s)}return{ok:!0,value:t}}function kn(t,n){const r=[t.outer,...t.holes],e=[n.outer,...n.holes];return!cn(n).ok||r.length!==e.length||r.some((i,o)=>!ln(i,e[o],1e-4)||!ln(e[o],i,1e-4))?w("precision-loss","座標の数値表現で輪郭や穴が変化します。幅かモデルを見直してください。"):{ok:!0,value:n}}class ar extends Error{constructor(n){super(`輪郭の頂点は50000個までです（現在${n}個）。`),this.count=n}}class hr extends Error{}function fr(t,n,r,e){const i=n/2,o=[];for(const u of[...t.segments].sort((h,f)=>h.id.localeCompare(f.id))){const[h,f]=[u.start,u.end],c=Math.hypot(f[0]-h[0],f[1]-h[1]),a=f[0]-h[0],d=f[1]-h[1],x=Math.abs(a)===Math.abs(d),g=x?-Math.sign(d)*Math.SQRT1_2*i:-d/c*i,E=x?Math.sign(a)*Math.SQRT1_2*i:a/c*i;o.push([[[h[0]+g,h[1]+E],[h[0]-g,h[1]-E],[f[0]-g,f[1]-E],[f[0]+g,f[1]+E]]])}const s=Math.max(16,4*Math.ceil(Math.PI/Math.acos(1-r/i)/4)),l=e?i/Math.cos(Math.PI/s):i;for(const u of[...t.model.nodes].sort((h,f)=>h.id.localeCompare(f.id))){const h=[];for(let f=0;f<s;f++){const c=(f+(e?.5:0))*2*Math.PI/s,a=!e&&s%8===0&&f%(s/8)===0?f/(s/8):-1,d=Math.SQRT1_2,x=a>=0?i*[1,d,0,-d,-1,-d,0,d][a]:!e&&f%(s/4)===0?[i,0,-i,0][f/(s/4)]:l*Math.cos(c),g=a>=0?i*[0,d,1,d,0,-d,-1,-d][a]:!e&&f%(s/4)===0?[0,i,0,-i][f/(s/4)]:l*Math.sin(c);h.push([u.x*10+x,u.y*10+g])}o.push([h])}return o}function dr(t){const n=t.flat(2),r=new Set(n.map(f=>f.join(","))),e=Math.max(1,...n.flatMap(f=>f.map(Math.abs))),i=32*Number.EPSILON*e,o=new Map,s=(f,c)=>`${f},${c}`;for(const f of n){const c=s(Math.round(f[0]/i),Math.round(f[1]/i)),a=o.get(c)??[];a.push(f),o.set(c,a)}const l=f=>{if(r.has(f.join(",")))return f;const c=Math.round(f[0]/i),a=Math.round(f[1]/i);let d=f,x=i;for(let g=-1;g<=1;g++)for(let E=-1;E<=1;E++)for(const y of o.get(s(c+g,a+E))??[]){const M=Math.hypot(f[0]-y[0],f[1]-y[1]);M<x&&(d=y,x=M)}return d},u=f=>f.map(c=>c.map(a=>{const d=[];for(const x of a.map(l))(!d.length||x[0]!==d.at(-1)[0]||x[1]!==d.at(-1)[1])&&d.push(x);if(d.length<4)throw new hr("数値演算で輪郭または穴が潰れます。");return d}));let h=[];for(let f=0;f<t.length;f+=32){const c=t.slice(f,f+32);h=u(ot.union(h,...c));const a=h.reduce((d,x)=>d+x.reduce((g,E)=>g+E.length-1,0),0);if(a>5e4)throw new ar(a)}return h}function xr(t,n){let r=[...t];r.length>1&&r[0][0]===r.at(-1)[0]&&r[0][1]===r.at(-1)[1]&&r.pop(),G(r)>0!==n&&r.reverse();let e=0;for(let i=1;i<r.length;i++)(r[i][0]<r[e][0]||r[i][0]===r[e][0]&&r[i][1]<r[e][1])&&(e=i);return r=[...r.slice(e),...r.slice(0,e)],r}function gr(t,n,r,e){const i=t[0].map(f=>f[0]),o=t[0].map(f=>f[1]),s=e??[-Math.min(...i),-Math.min(...o)],l=t.map(f=>f.map(c=>[c[0]+s[0],c[1]+s[1]])),u=xr(l[0],!0),h=l.slice(1).map(f=>xr(f,!1)).sort((f,c)=>f[0][0]-c[0][0]||f[0][1]-c[0][1]);return{outer:u,holes:h,widthMm:r,offsetMm:s,bounds:{widthMm:Math.max(...u.map(f=>f[0])),heightMm:Math.max(...u.map(f=>f[1]))},areaMm2:G(u)+h.reduce((f,c)=>f+G(c),0),supportSpanMm:n.supportSpanMm,warnings:[]}}function lt(t){const n=i=>i.map(o=>o.map(s=>Number(s.toFixed(6))||0)),r=n(t.outer),e=t.holes.map(n);return{...t,outer:r,holes:e,bounds:{widthMm:Math.max(...r.map(i=>i[0])),heightMm:Math.max(...r.map(i=>i[1]))},areaMm2:G(r)+e.reduce((i,o)=>i+G(o),0)}}function ct(t){const n=new Map,r=[];for(const o of t.segments){const s={from:o.startNodeId,to:o.endNodeId,start:o.start,end:o.end,id:o.id,twin:null},l={from:o.endNodeId,to:o.startNodeId,start:o.end,end:o.start,id:o.id,twin:s};s.twin=l;for(const u of[s,l]){const h=n.get(u.from)??[];h.push(u),n.set(u.from,h),r.push(u)}}for(const o of n.values())o.sort((s,l)=>Math.atan2(s.end[1]-s.start[1],s.end[0]-s.start[0])-Math.atan2(l.end[1]-l.start[1],l.end[0]-l.start[0]));const e=new Set,i=[];for(const o of r){if(e.has(o))continue;const s=[],l=new Set;let u=o;for(;!e.has(u);){e.add(u),s.push(u.start),l.add(u.id);const h=n.get(u.to),f=h.indexOf(u.twin);u=h[(f+h.length-1)%h.length]}u===o&&G(s)>N&&i.push({ring:s,memberIds:[...l]})}return i}function ut(t,n){const r=[];for(let e=0;e<t.segments.length;e++)for(let i=e+1;i<t.segments.length;i++){const o=t.segments[e],s=t.segments[i];[o.startNodeId,o.endNodeId].some(l=>l===s.startNodeId||l===s.endNodeId)||Wn(o,s)<=n.widthMm+N&&r.push({code:"width-contact",severity:"warning",message:"部材幅により、節点を共有しない部材が接触しています。解析と接続状態が異なる可能性があります。",nodeIds:[],memberIds:[o.id,s.id]})}if(n.holes.length!==t.cycleRank){const e=ct(t).map(o=>({...o,ring:o.ring.map(s=>[s[0]+n.offsetMm[0],s[1]+n.offsetMm[1]])})),i=(o,s)=>({code:"hole-change",severity:"warning",message:`幅の影響で穴の数が変化しています（中心線の閉路${t.cycleRank}、加工輪郭の穴${n.holes.length}）。輪郭を確認してください。`,nodeIds:[],memberIds:s,region:o});for(const o of e)n.holes.some(s=>s.every(l=>Z(l,o.ring)>=0))||r.push(i(o.ring,o.memberIds));for(const o of n.holes)e.some(s=>o.every(l=>Z(l,s.ring)>=0))||r.push(i(o,[...new Set(r.flatMap(s=>s.memberIds))]));r.some(o=>o.code==="hole-change")||r.push(i(n.outer,t.segments.map(o=>o.id)))}return r}function at(t,n){const r=Bn({format:"dxf",widthText:String(n),thicknessText:""});if(!r.ok)return r;try{for(const e of[.005,.0025]){const i=dr(fr(t,n,e,!1)),o=dr(fr(t,n,e,!0));if(i.length!==1||o.length!==1)continue;const s=gr(i[0],t,n),l=gr(o[0],t,n,s.offsetMm);if(!st(s,l).ok)continue;const u=lt(s);return kn(s,u).ok?(u.warnings=ut(t,u),{ok:!0,value:u}):w("precision-loss","座標の数値表現で輪郭や穴が潰れます。幅かモデルを見直してください。")}return w("precision-loss","輪郭に接触があるか、近似精度の範囲で穴・接続が変化します。幅かモデルを見直してください。")}catch(e){return e instanceof ar?w("limit",e.message):e instanceof hr?w("precision-loss",e.message):w("union-failed","部材の一体化に失敗しました。幅かモデルを見直して再試行してください。")}}var ht=`  0\r
+SECTION\r
+  2\r
+HEADER\r
+  9\r
+$ACADVER\r
+  1\r
+AC1015\r
+  9\r
+$ACADMAINTVER\r
+ 70\r
+6\r
+  9\r
+$DWGCODEPAGE\r
+  3\r
+ANSI_1252\r
+  9\r
+$INSBASE\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$EXTMIN\r
+ 10\r
+1e+20\r
+ 20\r
+1e+20\r
+ 30\r
+1e+20\r
+  9\r
+$EXTMAX\r
+ 10\r
+-1e+20\r
+ 20\r
+-1e+20\r
+ 30\r
+-1e+20\r
+  9\r
+$LIMMIN\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+  9\r
+$LIMMAX\r
+ 10\r
+420.0\r
+ 20\r
+297.0\r
+  9\r
+$ORTHOMODE\r
+ 70\r
+0\r
+  9\r
+$REGENMODE\r
+ 70\r
+1\r
+  9\r
+$FILLMODE\r
+ 70\r
+1\r
+  9\r
+$QTEXTMODE\r
+ 70\r
+0\r
+  9\r
+$MIRRTEXT\r
+ 70\r
+1\r
+  9\r
+$LTSCALE\r
+ 40\r
+1.0\r
+  9\r
+$ATTMODE\r
+ 70\r
+1\r
+  9\r
+$TEXTSIZE\r
+ 40\r
+2.5\r
+  9\r
+$TRACEWID\r
+ 40\r
+1.0\r
+  9\r
+$TEXTSTYLE\r
+  7\r
+Standard\r
+  9\r
+$CLAYER\r
+  8\r
+0\r
+  9\r
+$CELTYPE\r
+  6\r
+ByLayer\r
+  9\r
+$CECOLOR\r
+ 62\r
+256\r
+  9\r
+$CELTSCALE\r
+ 40\r
+1.0\r
+  9\r
+$DISPSILH\r
+ 70\r
+0\r
+  9\r
+$DIMSCALE\r
+ 40\r
+1.0\r
+  9\r
+$DIMASZ\r
+ 40\r
+2.5\r
+  9\r
+$DIMEXO\r
+ 40\r
+0.625\r
+  9\r
+$DIMDLI\r
+ 40\r
+3.75\r
+  9\r
+$DIMRND\r
+ 40\r
+0.0\r
+  9\r
+$DIMDLE\r
+ 40\r
+0.0\r
+  9\r
+$DIMEXE\r
+ 40\r
+1.25\r
+  9\r
+$DIMTP\r
+ 40\r
+0.0\r
+  9\r
+$DIMTM\r
+ 40\r
+0.0\r
+  9\r
+$DIMTXT\r
+ 40\r
+2.5\r
+  9\r
+$DIMCEN\r
+ 40\r
+2.5\r
+  9\r
+$DIMTSZ\r
+ 40\r
+0.0\r
+  9\r
+$DIMTOL\r
+ 70\r
+0\r
+  9\r
+$DIMLIM\r
+ 70\r
+0\r
+  9\r
+$DIMTIH\r
+ 70\r
+0\r
+  9\r
+$DIMTOH\r
+ 70\r
+0\r
+  9\r
+$DIMSE1\r
+ 70\r
+0\r
+  9\r
+$DIMSE2\r
+ 70\r
+0\r
+  9\r
+$DIMTAD\r
+ 70\r
+1\r
+  9\r
+$DIMZIN\r
+ 70\r
+8\r
+  9\r
+$DIMBLK\r
+  1\r
+\r
+  9\r
+$DIMASO\r
+ 70\r
+1\r
+  9\r
+$DIMSHO\r
+ 70\r
+1\r
+  9\r
+$DIMPOST\r
+  1\r
+\r
+  9\r
+$DIMAPOST\r
+  1\r
+\r
+  9\r
+$DIMALT\r
+ 70\r
+0\r
+  9\r
+$DIMALTD\r
+ 70\r
+3\r
+  9\r
+$DIMALTF\r
+ 40\r
+0.03937007874\r
+  9\r
+$DIMLFAC\r
+ 40\r
+1.0\r
+  9\r
+$DIMTOFL\r
+ 70\r
+1\r
+  9\r
+$DIMTVP\r
+ 40\r
+0.0\r
+  9\r
+$DIMTIX\r
+ 70\r
+0\r
+  9\r
+$DIMSOXD\r
+ 70\r
+0\r
+  9\r
+$DIMSAH\r
+ 70\r
+0\r
+  9\r
+$DIMBLK1\r
+  1\r
+\r
+  9\r
+$DIMBLK2\r
+  1\r
+\r
+  9\r
+$DIMSTYLE\r
+  2\r
+ISO-25\r
+  9\r
+$DIMCLRD\r
+ 70\r
+0\r
+  9\r
+$DIMCLRE\r
+ 70\r
+0\r
+  9\r
+$DIMCLRT\r
+ 70\r
+0\r
+  9\r
+$DIMTFAC\r
+ 40\r
+1.0\r
+  9\r
+$DIMGAP\r
+ 40\r
+0.625\r
+  9\r
+$DIMJUST\r
+ 70\r
+0\r
+  9\r
+$DIMSD1\r
+ 70\r
+0\r
+  9\r
+$DIMSD2\r
+ 70\r
+0\r
+  9\r
+$DIMTOLJ\r
+ 70\r
+0\r
+  9\r
+$DIMTZIN\r
+ 70\r
+8\r
+  9\r
+$DIMALTZ\r
+ 70\r
+0\r
+  9\r
+$DIMALTTZ\r
+ 70\r
+0\r
+  9\r
+$DIMUPT\r
+ 70\r
+0\r
+  9\r
+$DIMDEC\r
+ 70\r
+2\r
+  9\r
+$DIMTDEC\r
+ 70\r
+2\r
+  9\r
+$DIMALTU\r
+ 70\r
+2\r
+  9\r
+$DIMALTTD\r
+ 70\r
+3\r
+  9\r
+$DIMTXSTY\r
+  7\r
+Standard\r
+  9\r
+$DIMAUNIT\r
+ 70\r
+0\r
+  9\r
+$DIMADEC\r
+ 70\r
+0\r
+  9\r
+$DIMALTRND\r
+ 40\r
+0.0\r
+  9\r
+$DIMAZIN\r
+ 70\r
+0\r
+  9\r
+$DIMDSEP\r
+ 70\r
+44\r
+  9\r
+$DIMATFIT\r
+ 70\r
+3\r
+  9\r
+$DIMFRAC\r
+ 70\r
+0\r
+  9\r
+$DIMLDRBLK\r
+  1\r
+\r
+  9\r
+$DIMLUNIT\r
+ 70\r
+2\r
+  9\r
+$DIMLWD\r
+ 70\r
+-2\r
+  9\r
+$DIMLWE\r
+ 70\r
+-2\r
+  9\r
+$DIMTMOVE\r
+ 70\r
+0\r
+  9\r
+$LUNITS\r
+ 70\r
+2\r
+  9\r
+$LUPREC\r
+ 70\r
+4\r
+  9\r
+$SKETCHINC\r
+ 40\r
+1.0\r
+  9\r
+$FILLETRAD\r
+ 40\r
+10.0\r
+  9\r
+$AUNITS\r
+ 70\r
+0\r
+  9\r
+$AUPREC\r
+ 70\r
+2\r
+  9\r
+$MENU\r
+  1\r
+.\r
+  9\r
+$ELEVATION\r
+ 40\r
+0.0\r
+  9\r
+$PELEVATION\r
+ 40\r
+0.0\r
+  9\r
+$THICKNESS\r
+ 40\r
+0.0\r
+  9\r
+$LIMCHECK\r
+ 70\r
+0\r
+  9\r
+$CHAMFERA\r
+ 40\r
+0.0\r
+  9\r
+$CHAMFERB\r
+ 40\r
+0.0\r
+  9\r
+$CHAMFERC\r
+ 40\r
+0.0\r
+  9\r
+$CHAMFERD\r
+ 40\r
+0.0\r
+  9\r
+$SKPOLY\r
+ 70\r
+0\r
+  9\r
+$TDCREATE\r
+ 40\r
+2461333.5056481482\r
+  9\r
+$TDUCREATE\r
+ 40\r
+2458532.153996898\r
+  9\r
+$TDUPDATE\r
+ 40\r
+2461333.5056481482\r
+  9\r
+$TDUUPDATE\r
+ 40\r
+2458532.1544311\r
+  9\r
+$TDINDWG\r
+ 40\r
+0.0\r
+  9\r
+$TDUSRTIMER\r
+ 40\r
+0.0\r
+  9\r
+$USRTIMER\r
+ 70\r
+1\r
+  9\r
+$ANGBASE\r
+ 50\r
+0.0\r
+  9\r
+$ANGDIR\r
+ 70\r
+0\r
+  9\r
+$PDMODE\r
+ 70\r
+0\r
+  9\r
+$PDSIZE\r
+ 40\r
+0.0\r
+  9\r
+$PLINEWID\r
+ 40\r
+0.0\r
+  9\r
+$SPLFRAME\r
+ 70\r
+0\r
+  9\r
+$SPLINETYPE\r
+ 70\r
+6\r
+  9\r
+$SPLINESEGS\r
+ 70\r
+8\r
+  9\r
+$HANDSEED\r
+  5\r
+3D\r
+  9\r
+$SURFTAB1\r
+ 70\r
+6\r
+  9\r
+$SURFTAB2\r
+ 70\r
+6\r
+  9\r
+$SURFTYPE\r
+ 70\r
+6\r
+  9\r
+$SURFU\r
+ 70\r
+6\r
+  9\r
+$SURFV\r
+ 70\r
+6\r
+  9\r
+$UCSBASE\r
+  2\r
+\r
+  9\r
+$UCSNAME\r
+  2\r
+\r
+  9\r
+$UCSORG\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSXDIR\r
+ 10\r
+1.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSYDIR\r
+ 10\r
+0.0\r
+ 20\r
+1.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSORTHOREF\r
+  2\r
+\r
+  9\r
+$UCSORTHOVIEW\r
+ 70\r
+0\r
+  9\r
+$UCSORGTOP\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSORGBOTTOM\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSORGLEFT\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSORGRIGHT\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSORGFRONT\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$UCSORGBACK\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSBASE\r
+  2\r
+\r
+  9\r
+$PUCSNAME\r
+  2\r
+\r
+  9\r
+$PUCSORG\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSXDIR\r
+ 10\r
+1.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSYDIR\r
+ 10\r
+0.0\r
+ 20\r
+1.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSORTHOREF\r
+  2\r
+\r
+  9\r
+$PUCSORTHOVIEW\r
+ 70\r
+0\r
+  9\r
+$PUCSORGTOP\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSORGBOTTOM\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSORGLEFT\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSORGRIGHT\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSORGFRONT\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PUCSORGBACK\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$USERI1\r
+ 70\r
+0\r
+  9\r
+$USERI2\r
+ 70\r
+0\r
+  9\r
+$USERI3\r
+ 70\r
+0\r
+  9\r
+$USERI4\r
+ 70\r
+0\r
+  9\r
+$USERI5\r
+ 70\r
+0\r
+  9\r
+$USERR1\r
+ 40\r
+0.0\r
+  9\r
+$USERR2\r
+ 40\r
+0.0\r
+  9\r
+$USERR3\r
+ 40\r
+0.0\r
+  9\r
+$USERR4\r
+ 40\r
+0.0\r
+  9\r
+$USERR5\r
+ 40\r
+0.0\r
+  9\r
+$WORLDVIEW\r
+ 70\r
+1\r
+  9\r
+$SHADEDGE\r
+ 70\r
+3\r
+  9\r
+$SHADEDIF\r
+ 70\r
+70\r
+  9\r
+$TILEMODE\r
+ 70\r
+1\r
+  9\r
+$MAXACTVP\r
+ 70\r
+64\r
+  9\r
+$PINSBASE\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  9\r
+$PLIMCHECK\r
+ 70\r
+0\r
+  9\r
+$PEXTMIN\r
+ 10\r
+1e+20\r
+ 20\r
+1e+20\r
+ 30\r
+1e+20\r
+  9\r
+$PEXTMAX\r
+ 10\r
+-1e+20\r
+ 20\r
+-1e+20\r
+ 30\r
+-1e+20\r
+  9\r
+$PLIMMIN\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+  9\r
+$PLIMMAX\r
+ 10\r
+420.0\r
+ 20\r
+297.0\r
+  9\r
+$UNITMODE\r
+ 70\r
+0\r
+  9\r
+$VISRETAIN\r
+ 70\r
+1\r
+  9\r
+$PLINEGEN\r
+ 70\r
+0\r
+  9\r
+$PSLTSCALE\r
+ 70\r
+1\r
+  9\r
+$TREEDEPTH\r
+ 70\r
+3020\r
+  9\r
+$CMLSTYLE\r
+  2\r
+Standard\r
+  9\r
+$CMLJUST\r
+ 70\r
+0\r
+  9\r
+$CMLSCALE\r
+ 40\r
+20.0\r
+  9\r
+$PROXYGRAPHICS\r
+ 70\r
+1\r
+  9\r
+$MEASUREMENT\r
+ 70\r
+1\r
+  9\r
+$CELWEIGHT\r
+370\r
+-1\r
+  9\r
+$ENDCAPS\r
+280\r
+0\r
+  9\r
+$JOINSTYLE\r
+280\r
+0\r
+  9\r
+$LWDISPLAY\r
+290\r
+0\r
+  9\r
+$INSUNITS\r
+ 70\r
+4\r
+  9\r
+$HYPERLINKBASE\r
+  1\r
+\r
+  9\r
+$STYLESHEET\r
+  1\r
+\r
+  9\r
+$XEDIT\r
+290\r
+1\r
+  9\r
+$CEPSNTYPE\r
+380\r
+0\r
+  9\r
+$PSTYLEMODE\r
+290\r
+1\r
+  9\r
+$FINGERPRINTGUID\r
+  2\r
+{3D2ADB48-BEDC-490C-AEB4-E5B6D4BD7A9A}\r
+  9\r
+$VERSIONGUID\r
+  2\r
+{2A658427-29C2-452A-A8B9-A140E913C56A}\r
+  9\r
+$EXTNAMES\r
+290\r
+1\r
+  9\r
+$PSVPSCALE\r
+ 40\r
+0.0\r
+  9\r
+$OLESTARTUP\r
+290\r
+0\r
+  0\r
+ENDSEC\r
+  0\r
+SECTION\r
+  2\r
+CLASSES\r
+  0\r
+CLASS\r
+  1\r
+ACDBDICTIONARYWDFLT\r
+  2\r
+AcDbDictionaryWithDefault\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+0\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+SUN\r
+  2\r
+AcDbSun\r
+  3\r
+SCENEOE\r
+ 90\r
+1153\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+VISUALSTYLE\r
+  2\r
+AcDbVisualStyle\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+4095\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+MATERIAL\r
+  2\r
+AcDbMaterial\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+1153\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+SCALE\r
+  2\r
+AcDbScale\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+1153\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+TABLESTYLE\r
+  2\r
+AcDbTableStyle\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+4095\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+MLEADERSTYLE\r
+  2\r
+AcDbMLeaderStyle\r
+  3\r
+ACDB_MLEADERSTYLE_CLASS\r
+ 90\r
+4095\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+DICTIONARYVAR\r
+  2\r
+AcDbDictionaryVar\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+0\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+CELLSTYLEMAP\r
+  2\r
+AcDbCellStyleMap\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+1152\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+MENTALRAYRENDERSETTINGS\r
+  2\r
+AcDbMentalRayRenderSettings\r
+  3\r
+SCENEOE\r
+ 90\r
+1024\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+ACDBDETAILVIEWSTYLE\r
+  2\r
+AcDbDetailViewStyle\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+1025\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+ACDBSECTIONVIEWSTYLE\r
+  2\r
+AcDbSectionViewStyle\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+1025\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+RASTERVARIABLES\r
+  2\r
+AcDbRasterVariables\r
+  3\r
+ISM\r
+ 90\r
+0\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+ACDBPLACEHOLDER\r
+  2\r
+AcDbPlaceHolder\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+0\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+CLASS\r
+  1\r
+LAYOUT\r
+  2\r
+AcDbLayout\r
+  3\r
+ObjectDBX Classes\r
+ 90\r
+0\r
+280\r
+0\r
+281\r
+0\r
+  0\r
+ENDSEC\r
+  0\r
+SECTION\r
+  2\r
+TABLES\r
+  0\r
+TABLE\r
+  2\r
+VPORT\r
+  5\r
+8\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+1\r
+  0\r
+VPORT\r
+  5\r
+23\r
+330\r
+8\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbViewportTableRecord\r
+  2\r
+*Active\r
+ 70\r
+0\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 11\r
+1.0\r
+ 21\r
+1.0\r
+ 12\r
+0.0\r
+ 22\r
+0.0\r
+ 13\r
+0.0\r
+ 23\r
+0.0\r
+ 14\r
+0.5\r
+ 24\r
+0.5\r
+ 15\r
+0.5\r
+ 25\r
+0.5\r
+ 16\r
+0.0\r
+ 26\r
+0.0\r
+ 36\r
+1.0\r
+ 17\r
+0.0\r
+ 27\r
+0.0\r
+ 37\r
+0.0\r
+ 40\r
+1000.0\r
+ 41\r
+1.34\r
+ 42\r
+50.0\r
+ 43\r
+0.0\r
+ 44\r
+0.0\r
+ 50\r
+0.0\r
+ 51\r
+0.0\r
+ 71\r
+0\r
+ 72\r
+1000\r
+ 73\r
+1\r
+ 74\r
+3\r
+ 75\r
+0\r
+ 76\r
+0\r
+ 77\r
+0\r
+ 78\r
+0\r
+281\r
+0\r
+ 65\r
+0\r
+146\r
+0.0\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+LTYPE\r
+  5\r
+2\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+3\r
+  0\r
+LTYPE\r
+  5\r
+24\r
+330\r
+2\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLinetypeTableRecord\r
+  2\r
+ByBlock\r
+ 70\r
+0\r
+  3\r
+\r
+ 72\r
+65\r
+ 73\r
+0\r
+ 40\r
+0.0\r
+  0\r
+LTYPE\r
+  5\r
+25\r
+330\r
+2\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLinetypeTableRecord\r
+  2\r
+ByLayer\r
+ 70\r
+0\r
+  3\r
+\r
+ 72\r
+65\r
+ 73\r
+0\r
+ 40\r
+0.0\r
+  0\r
+LTYPE\r
+  5\r
+26\r
+330\r
+2\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLinetypeTableRecord\r
+  2\r
+Continuous\r
+ 70\r
+0\r
+  3\r
+\r
+ 72\r
+65\r
+ 73\r
+0\r
+ 40\r
+0.0\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+LAYER\r
+  5\r
+1\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+4\r
+  0\r
+LAYER\r
+  5\r
+27\r
+330\r
+1\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLayerTableRecord\r
+  2\r
+0\r
+ 70\r
+0\r
+ 62\r
+7\r
+  6\r
+Continuous\r
+370\r
+-3\r
+390\r
+13\r
+  0\r
+LAYER\r
+  5\r
+28\r
+330\r
+1\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLayerTableRecord\r
+  2\r
+Defpoints\r
+ 70\r
+0\r
+ 62\r
+7\r
+  6\r
+Continuous\r
+290\r
+0\r
+370\r
+-3\r
+390\r
+13\r
+  0\r
+LAYER\r
+  5\r
+2F\r
+330\r
+1\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLayerTableRecord\r
+  2\r
+CUT_OUTER\r
+ 70\r
+0\r
+ 62\r
+7\r
+  6\r
+Continuous\r
+370\r
+-3\r
+390\r
+13\r
+  0\r
+LAYER\r
+  5\r
+30\r
+330\r
+1\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbLayerTableRecord\r
+  2\r
+CUT_INNER\r
+ 70\r
+0\r
+ 62\r
+1\r
+  6\r
+Continuous\r
+370\r
+-3\r
+390\r
+13\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+STYLE\r
+  5\r
+5\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+1\r
+  0\r
+STYLE\r
+  5\r
+29\r
+330\r
+5\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbTextStyleTableRecord\r
+  2\r
+Standard\r
+ 70\r
+0\r
+ 40\r
+0.0\r
+ 41\r
+1.0\r
+ 50\r
+0.0\r
+ 71\r
+0\r
+ 42\r
+2.5\r
+  3\r
+txt\r
+  4\r
+\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+VIEW\r
+  5\r
+7\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+0\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+UCS\r
+  5\r
+6\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+0\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+APPID\r
+  5\r
+3\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+3\r
+  0\r
+APPID\r
+  5\r
+2A\r
+330\r
+3\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbRegAppTableRecord\r
+  2\r
+ACAD\r
+ 70\r
+0\r
+  0\r
+APPID\r
+  5\r
+3A\r
+330\r
+3\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbRegAppTableRecord\r
+  2\r
+HATCHBACKGROUNDCOLOR\r
+ 70\r
+0\r
+  0\r
+APPID\r
+  5\r
+3B\r
+330\r
+3\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbRegAppTableRecord\r
+  2\r
+EZDXF\r
+ 70\r
+0\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+DIMSTYLE\r
+  5\r
+4\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+1\r
+100\r
+AcDbDimStyleTable\r
+  0\r
+DIMSTYLE\r
+105\r
+2B\r
+330\r
+4\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbDimStyleTableRecord\r
+  2\r
+Standard\r
+ 70\r
+0\r
+  3\r
+\r
+  4\r
+\r
+ 40\r
+1.0\r
+ 41\r
+2.5\r
+ 42\r
+0.625\r
+ 43\r
+3.75\r
+ 44\r
+1.25\r
+ 45\r
+0.0\r
+ 46\r
+0.0\r
+ 47\r
+0.0\r
+ 48\r
+0.0\r
+140\r
+2.5\r
+141\r
+2.5\r
+142\r
+0.0\r
+143\r
+0.03937007874\r
+144\r
+1.0\r
+145\r
+0.0\r
+146\r
+1.0\r
+147\r
+0.625\r
+148\r
+0.0\r
+ 71\r
+0\r
+ 72\r
+0\r
+ 73\r
+0\r
+ 74\r
+0\r
+ 75\r
+0\r
+ 76\r
+0\r
+ 77\r
+1\r
+ 78\r
+8\r
+ 79\r
+3\r
+170\r
+0\r
+171\r
+3\r
+172\r
+1\r
+173\r
+0\r
+174\r
+0\r
+175\r
+0\r
+176\r
+0\r
+177\r
+0\r
+178\r
+0\r
+179\r
+2\r
+271\r
+2\r
+272\r
+2\r
+273\r
+2\r
+274\r
+3\r
+275\r
+0\r
+276\r
+0\r
+277\r
+2\r
+278\r
+44\r
+279\r
+0\r
+280\r
+0\r
+281\r
+0\r
+282\r
+0\r
+283\r
+0\r
+284\r
+8\r
+285\r
+0\r
+286\r
+0\r
+288\r
+0\r
+289\r
+3\r
+371\r
+-2\r
+372\r
+-2\r
+  0\r
+ENDTAB\r
+  0\r
+TABLE\r
+  2\r
+BLOCK_RECORD\r
+  5\r
+9\r
+330\r
+0\r
+100\r
+AcDbSymbolTable\r
+ 70\r
+2\r
+  0\r
+BLOCK_RECORD\r
+  5\r
+17\r
+330\r
+9\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbBlockTableRecord\r
+  2\r
+*Model_Space\r
+340\r
+1A\r
+  0\r
+BLOCK_RECORD\r
+  5\r
+1B\r
+330\r
+9\r
+100\r
+AcDbSymbolTableRecord\r
+100\r
+AcDbBlockTableRecord\r
+  2\r
+*Paper_Space\r
+340\r
+1E\r
+  0\r
+ENDTAB\r
+  0\r
+ENDSEC\r
+  0\r
+SECTION\r
+  2\r
+BLOCKS\r
+  0\r
+BLOCK\r
+  5\r
+18\r
+330\r
+17\r
+100\r
+AcDbEntity\r
+  8\r
+0\r
+100\r
+AcDbBlockBegin\r
+  2\r
+*Model_Space\r
+ 70\r
+0\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  3\r
+*Model_Space\r
+  1\r
+\r
+  0\r
+ENDBLK\r
+  5\r
+19\r
+330\r
+17\r
+100\r
+AcDbEntity\r
+  8\r
+0\r
+100\r
+AcDbBlockEnd\r
+  0\r
+BLOCK\r
+  5\r
+1C\r
+330\r
+1B\r
+100\r
+AcDbEntity\r
+  8\r
+0\r
+100\r
+AcDbBlockBegin\r
+  2\r
+*Paper_Space\r
+ 70\r
+0\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 30\r
+0.0\r
+  3\r
+*Paper_Space\r
+  1\r
+\r
+  0\r
+ENDBLK\r
+  5\r
+1D\r
+330\r
+1B\r
+100\r
+AcDbEntity\r
+  8\r
+0\r
+100\r
+AcDbBlockEnd\r
+  0\r
+ENDSEC\r
+  0\r
+SECTION\r
+  2\r
+ENTITIES\r
+  0\r
+ENDSEC\r
+  0\r
+SECTION\r
+  2\r
+OBJECTS\r
+  0\r
+DICTIONARY\r
+  5\r
+A\r
+330\r
+0\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  3\r
+ACAD_COLOR\r
+350\r
+B\r
+  3\r
+ACAD_GROUP\r
+350\r
+C\r
+  3\r
+ACAD_LAYOUT\r
+350\r
+D\r
+  3\r
+ACAD_MATERIAL\r
+350\r
+E\r
+  3\r
+ACAD_MLEADERSTYLE\r
+350\r
+F\r
+  3\r
+ACAD_MLINESTYLE\r
+350\r
+10\r
+  3\r
+ACAD_PLOTSETTINGS\r
+350\r
+11\r
+  3\r
+ACAD_PLOTSTYLENAME\r
+350\r
+12\r
+  3\r
+ACAD_SCALELIST\r
+350\r
+14\r
+  3\r
+ACAD_TABLESTYLE\r
+350\r
+15\r
+  3\r
+ACAD_VISUALSTYLE\r
+350\r
+16\r
+  3\r
+EZDXF_META\r
+350\r
+2D\r
+  0\r
+DICTIONARY\r
+  5\r
+B\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  0\r
+DICTIONARY\r
+  5\r
+C\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  0\r
+DICTIONARY\r
+  5\r
+D\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  3\r
+Model\r
+350\r
+1A\r
+  3\r
+Layout1\r
+350\r
+1E\r
+  0\r
+DICTIONARY\r
+  5\r
+E\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  3\r
+ByBlock\r
+350\r
+1F\r
+  3\r
+ByLayer\r
+350\r
+20\r
+  3\r
+Global\r
+350\r
+21\r
+  0\r
+DICTIONARY\r
+  5\r
+F\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  3\r
+Standard\r
+350\r
+2C\r
+  0\r
+DICTIONARY\r
+  5\r
+10\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  3\r
+Standard\r
+350\r
+22\r
+  0\r
+DICTIONARY\r
+  5\r
+11\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  0\r
+ACDBDICTIONARYWDFLT\r
+  5\r
+12\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  3\r
+Normal\r
+350\r
+13\r
+100\r
+AcDbDictionaryWithDefault\r
+340\r
+13\r
+  0\r
+ACDBPLACEHOLDER\r
+  5\r
+13\r
+330\r
+12\r
+  0\r
+DICTIONARY\r
+  5\r
+14\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  0\r
+DICTIONARY\r
+  5\r
+15\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  0\r
+DICTIONARY\r
+  5\r
+16\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+281\r
+1\r
+  0\r
+LAYOUT\r
+  5\r
+1A\r
+330\r
+D\r
+100\r
+AcDbPlotSettings\r
+  1\r
+\r
+  4\r
+A3\r
+  6\r
+\r
+ 40\r
+7.5\r
+ 41\r
+20.0\r
+ 42\r
+7.5\r
+ 43\r
+20.0\r
+ 44\r
+420.0\r
+ 45\r
+297.0\r
+ 46\r
+0.0\r
+ 47\r
+0.0\r
+ 48\r
+0.0\r
+ 49\r
+0.0\r
+140\r
+0.0\r
+141\r
+0.0\r
+142\r
+1.0\r
+143\r
+1.0\r
+ 70\r
+1024\r
+ 72\r
+1\r
+ 73\r
+0\r
+ 74\r
+5\r
+  7\r
+\r
+ 75\r
+16\r
+ 76\r
+0\r
+ 77\r
+2\r
+ 78\r
+300\r
+147\r
+1.0\r
+148\r
+0.0\r
+149\r
+0.0\r
+100\r
+AcDbLayout\r
+  1\r
+Model\r
+ 70\r
+1\r
+ 71\r
+0\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 11\r
+420.0\r
+ 21\r
+297.0\r
+ 12\r
+0.0\r
+ 22\r
+0.0\r
+ 32\r
+0.0\r
+ 14\r
+1e+20\r
+ 24\r
+1e+20\r
+ 34\r
+1e+20\r
+ 15\r
+-1e+20\r
+ 25\r
+-1e+20\r
+ 35\r
+-1e+20\r
+146\r
+0.0\r
+ 13\r
+0.0\r
+ 23\r
+0.0\r
+ 33\r
+0.0\r
+ 16\r
+1.0\r
+ 26\r
+0.0\r
+ 36\r
+0.0\r
+ 17\r
+0.0\r
+ 27\r
+1.0\r
+ 37\r
+0.0\r
+ 76\r
+1\r
+330\r
+17\r
+  0\r
+LAYOUT\r
+  5\r
+1E\r
+330\r
+D\r
+100\r
+AcDbPlotSettings\r
+  1\r
+\r
+  4\r
+A3\r
+  6\r
+\r
+ 40\r
+7.5\r
+ 41\r
+20.0\r
+ 42\r
+7.5\r
+ 43\r
+20.0\r
+ 44\r
+420.0\r
+ 45\r
+297.0\r
+ 46\r
+0.0\r
+ 47\r
+0.0\r
+ 48\r
+0.0\r
+ 49\r
+0.0\r
+140\r
+0.0\r
+141\r
+0.0\r
+142\r
+1.0\r
+143\r
+1.0\r
+ 70\r
+0\r
+ 72\r
+1\r
+ 73\r
+0\r
+ 74\r
+5\r
+  7\r
+\r
+ 75\r
+16\r
+ 76\r
+0\r
+ 77\r
+2\r
+ 78\r
+300\r
+147\r
+1.0\r
+148\r
+0.0\r
+149\r
+0.0\r
+100\r
+AcDbLayout\r
+  1\r
+Layout1\r
+ 70\r
+1\r
+ 71\r
+1\r
+ 10\r
+0.0\r
+ 20\r
+0.0\r
+ 11\r
+420.0\r
+ 21\r
+297.0\r
+ 12\r
+0.0\r
+ 22\r
+0.0\r
+ 32\r
+0.0\r
+ 14\r
+1e+20\r
+ 24\r
+1e+20\r
+ 34\r
+1e+20\r
+ 15\r
+-1e+20\r
+ 25\r
+-1e+20\r
+ 35\r
+-1e+20\r
+146\r
+0.0\r
+ 13\r
+0.0\r
+ 23\r
+0.0\r
+ 33\r
+0.0\r
+ 16\r
+1.0\r
+ 26\r
+0.0\r
+ 36\r
+0.0\r
+ 17\r
+0.0\r
+ 27\r
+1.0\r
+ 37\r
+0.0\r
+ 76\r
+1\r
+330\r
+1B\r
+  0\r
+MATERIAL\r
+  5\r
+1F\r
+102\r
+{ACAD_REACTORS\r
+330\r
+E\r
+102\r
+}\r
+330\r
+E\r
+100\r
+AcDbMaterial\r
+  1\r
+ByBlock\r
+  2\r
+\r
+ 70\r
+0\r
+ 40\r
+1.0\r
+ 71\r
+1\r
+ 41\r
+1.0\r
+ 91\r
+-1023410177\r
+ 42\r
+1.0\r
+ 72\r
+1\r
+  3\r
+\r
+ 73\r
+1\r
+ 74\r
+1\r
+ 75\r
+1\r
+ 44\r
+0.5\r
+ 73\r
+0\r
+ 45\r
+1.0\r
+ 46\r
+1.0\r
+ 77\r
+1\r
+  4\r
+\r
+ 78\r
+1\r
+ 79\r
+1\r
+170\r
+1\r
+ 48\r
+1.0\r
+171\r
+1\r
+  6\r
+\r
+172\r
+1\r
+173\r
+1\r
+174\r
+1\r
+140\r
+1.0\r
+141\r
+1.0\r
+175\r
+1\r
+  7\r
+\r
+176\r
+1\r
+177\r
+1\r
+178\r
+1\r
+143\r
+1.0\r
+179\r
+1\r
+  8\r
+\r
+270\r
+1\r
+271\r
+1\r
+272\r
+1\r
+145\r
+1.0\r
+146\r
+1.0\r
+273\r
+1\r
+  9\r
+\r
+274\r
+1\r
+275\r
+1\r
+276\r
+1\r
+ 42\r
+1.0\r
+ 72\r
+1\r
+  3\r
+\r
+ 73\r
+1\r
+ 74\r
+1\r
+ 75\r
+1\r
+ 94\r
+63\r
+  0\r
+MATERIAL\r
+  5\r
+20\r
+102\r
+{ACAD_REACTORS\r
+330\r
+E\r
+102\r
+}\r
+330\r
+E\r
+100\r
+AcDbMaterial\r
+  1\r
+ByLayer\r
+  2\r
+\r
+ 70\r
+0\r
+ 40\r
+1.0\r
+ 71\r
+1\r
+ 41\r
+1.0\r
+ 91\r
+-1023410177\r
+ 42\r
+1.0\r
+ 72\r
+1\r
+  3\r
+\r
+ 73\r
+1\r
+ 74\r
+1\r
+ 75\r
+1\r
+ 44\r
+0.5\r
+ 73\r
+0\r
+ 45\r
+1.0\r
+ 46\r
+1.0\r
+ 77\r
+1\r
+  4\r
+\r
+ 78\r
+1\r
+ 79\r
+1\r
+170\r
+1\r
+ 48\r
+1.0\r
+171\r
+1\r
+  6\r
+\r
+172\r
+1\r
+173\r
+1\r
+174\r
+1\r
+140\r
+1.0\r
+141\r
+1.0\r
+175\r
+1\r
+  7\r
+\r
+176\r
+1\r
+177\r
+1\r
+178\r
+1\r
+143\r
+1.0\r
+179\r
+1\r
+  8\r
+\r
+270\r
+1\r
+271\r
+1\r
+272\r
+1\r
+145\r
+1.0\r
+146\r
+1.0\r
+273\r
+1\r
+  9\r
+\r
+274\r
+1\r
+275\r
+1\r
+276\r
+1\r
+ 42\r
+1.0\r
+ 72\r
+1\r
+  3\r
+\r
+ 73\r
+1\r
+ 74\r
+1\r
+ 75\r
+1\r
+ 94\r
+63\r
+  0\r
+MATERIAL\r
+  5\r
+21\r
+102\r
+{ACAD_REACTORS\r
+330\r
+E\r
+102\r
+}\r
+330\r
+E\r
+100\r
+AcDbMaterial\r
+  1\r
+Global\r
+  2\r
+\r
+ 70\r
+0\r
+ 40\r
+1.0\r
+ 71\r
+1\r
+ 41\r
+1.0\r
+ 91\r
+-1023410177\r
+ 42\r
+1.0\r
+ 72\r
+1\r
+  3\r
+\r
+ 73\r
+1\r
+ 74\r
+1\r
+ 75\r
+1\r
+ 44\r
+0.5\r
+ 73\r
+0\r
+ 45\r
+1.0\r
+ 46\r
+1.0\r
+ 77\r
+1\r
+  4\r
+\r
+ 78\r
+1\r
+ 79\r
+1\r
+170\r
+1\r
+ 48\r
+1.0\r
+171\r
+1\r
+  6\r
+\r
+172\r
+1\r
+173\r
+1\r
+174\r
+1\r
+140\r
+1.0\r
+141\r
+1.0\r
+175\r
+1\r
+  7\r
+\r
+176\r
+1\r
+177\r
+1\r
+178\r
+1\r
+143\r
+1.0\r
+179\r
+1\r
+  8\r
+\r
+270\r
+1\r
+271\r
+1\r
+272\r
+1\r
+145\r
+1.0\r
+146\r
+1.0\r
+273\r
+1\r
+  9\r
+\r
+274\r
+1\r
+275\r
+1\r
+276\r
+1\r
+ 42\r
+1.0\r
+ 72\r
+1\r
+  3\r
+\r
+ 73\r
+1\r
+ 74\r
+1\r
+ 75\r
+1\r
+ 94\r
+63\r
+  0\r
+MLINESTYLE\r
+  5\r
+22\r
+102\r
+{ACAD_REACTORS\r
+330\r
+10\r
+102\r
+}\r
+330\r
+10\r
+100\r
+AcDbMlineStyle\r
+  2\r
+Standard\r
+ 70\r
+0\r
+  3\r
+\r
+ 62\r
+256\r
+ 51\r
+90.0\r
+ 52\r
+90.0\r
+ 71\r
+2\r
+ 49\r
+0.5\r
+ 62\r
+256\r
+  6\r
+BYLAYER\r
+ 49\r
+-0.5\r
+ 62\r
+256\r
+  6\r
+BYLAYER\r
+  0\r
+MLEADERSTYLE\r
+  5\r
+2C\r
+102\r
+{ACAD_REACTORS\r
+330\r
+F\r
+102\r
+}\r
+330\r
+F\r
+100\r
+AcDbMLeaderStyle\r
+179\r
+2\r
+170\r
+2\r
+171\r
+1\r
+172\r
+0\r
+ 90\r
+2\r
+ 40\r
+0.0\r
+ 41\r
+0.0\r
+173\r
+1\r
+ 91\r
+-1056964608\r
+ 92\r
+-2\r
+290\r
+1\r
+ 42\r
+2.0\r
+291\r
+1\r
+ 43\r
+8.0\r
+  3\r
+Standard\r
+ 44\r
+4.0\r
+300\r
+\r
+342\r
+29\r
+174\r
+1\r
+175\r
+1\r
+176\r
+0\r
+178\r
+1\r
+ 93\r
+-1056964608\r
+ 45\r
+4.0\r
+292\r
+0\r
+297\r
+0\r
+ 46\r
+4.0\r
+ 94\r
+-1056964608\r
+ 47\r
+1.0\r
+ 49\r
+1.0\r
+140\r
+1.0\r
+294\r
+1\r
+141\r
+0.0\r
+177\r
+0\r
+142\r
+1.0\r
+295\r
+0\r
+296\r
+0\r
+143\r
+3.75\r
+271\r
+0\r
+272\r
+9\r
+273\r
+9\r
+  0\r
+DICTIONARY\r
+  5\r
+2D\r
+330\r
+A\r
+100\r
+AcDbDictionary\r
+280\r
+1\r
+281\r
+1\r
+  3\r
+CREATED_BY_VBC_FRAME\r
+350\r
+2E\r
+  3\r
+WRITTEN_BY_VBC_FRAME\r
+350\r
+3C\r
+  0\r
+DICTIONARYVAR\r
+  5\r
+2E\r
+330\r
+2D\r
+100\r
+DictionaryVariables\r
+280\r
+0\r
+  1\r
+Virtual Bridge Contest Frame; envelope generated with ezdxf 1.4.5\r
+  0\r
+DICTIONARYVAR\r
+  5\r
+3C\r
+330\r
+2D\r
+100\r
+DictionaryVariables\r
+280\r
+0\r
+  1\r
+Virtual Bridge Contest Frame; envelope generated with ezdxf 1.4.5\r
+  0\r
+ENDSEC\r
+  0\r
+EOF\r
+`;const Fn=ht.trimEnd().split(/\r?\n/),rn=[];for(let t=0;t<Fn.length;t+=2)rn.push([Number(Fn[t]),Fn[t+1]]);const Er=rn.findIndex(([t,n])=>t===2&&n==="ENTITIES")+1,ft=rn.findIndex(([t,n])=>t===2&&n==="*Model_Space"),dt=rn.slice(0,ft).reverse().find(([t])=>t===5)[1],mr=Math.max(256,...rn.filter(([t])=>t===5||t===105).map(([,t])=>parseInt(t,16)+1));function xt(t){return`bridge-side-frame-w${t.toFixed(1)}mm.dxf`}function gt(t){if(!cn(t).ok)throw new Error("加工輪郭が不正です。");const n=d=>(Number(d.toFixed(6))||0).toFixed(6).replace(/\.?0+$/,"")||"0",r=d=>d.map(x=>[Number(n(x[0])),Number(n(x[1]))]),e=r(t.outer),i=t.holes.map(r),o={...t,outer:e,holes:i,bounds:{widthMm:Math.max(...e.map(d=>d[0])),heightMm:Math.max(...e.map(d=>d[1]))},areaMm2:G(e)+i.reduce((d,x)=>d+G(x),0)};if(!kn(t,o).ok)throw new Error("DXFの数値表現で輪郭が変化します。");const s=[e,...i],l=[],u=(d,x)=>{l.push(String(d).padStart(3," "),String(x))},h=String(Date.now()/864e5+24405875e-1),f={$HANDSEED:(mr+s.length).toString(16).toUpperCase(),$TDCREATE:h,$TDUPDATE:h,$TDUCREATE:h,$TDUUPDATE:h,$FINGERPRINTGUID:`{${crypto.randomUUID().toUpperCase()}}`,$VERSIONGUID:`{${crypto.randomUUID().toUpperCase()}}`};let c="";for(const[d,x]of rn.slice(0,Er))d===9&&(c=x),d===0&&(c=""),u(d,d!==9&&f[c]!==void 0?f[c]:x);const a=d=>{const x=n(d);return x.includes(".")?x:x+".0"};for(const[d,x]of s.entries()){u(0,"LWPOLYLINE"),u(5,(mr+d).toString(16).toUpperCase()),u(330,dt),u(100,"AcDbEntity"),u(8,d?"CUT_INNER":"CUT_OUTER"),u(100,"AcDbPolyline"),u(90,x.length),u(70,1);for(const[g,E]of x)u(10,a(g)),u(20,a(E))}for(const[d,x]of rn.slice(Er))u(d,x);return l.join(`\r
+`)+`\r
+`}function Et(t,n,r=2){const e=n&&n.length,i=e?n[0]*r:t.length;let o=pr(t,0,i,r,!0);const s=[];if(!o||o.next===o.prev)return s;let l,u,h;if(e&&(o=At(t,n,o,r)),t.length>80*r){l=t[0],u=t[1];let f=l,c=u;for(let a=r;a<i;a+=r){const d=t[a],x=t[a+1];d<l&&(l=d),x<u&&(u=x),d>f&&(f=d),x>c&&(c=x)}h=Math.max(f-l,c-u),h=h!==0?32767/h:0}return xn(o,s,r,l,u,h,0),s}function pr(t,n,r,e,i){let o;if(i===Nt(t,n,r,e)>0)for(let s=n;s<r;s+=e)o=Mr(s/e|0,t[s],t[s+1],o);else for(let s=r-e;s>=n;s-=e)o=Mr(s/e|0,t[s],t[s+1],o);return o&&un(o,o.next)&&(mn(o),o=o.next),o}function tn(t,n){if(!t)return t;n||(n=t);let r=t,e;do if(e=!1,!r.steiner&&(un(r,r.next)||L(r.prev,r,r.next)===0)){if(mn(r),r=n=r.prev,r===r.next)break;e=!0}else r=r.next;while(e||r!==n);return n}function xn(t,n,r,e,i,o,s){if(!t)return;!s&&o&&Tt(t,e,i,o);let l=t;for(;t.prev!==t.next;){const u=t.prev,h=t.next;if(o?pt(t,e,i,o):mt(t)){n.push(u.i,t.i,h.i),mn(t),t=h.next,l=h.next;continue}if(t=h,t===l){s?s===1?(t=yt(tn(t),n),xn(t,n,r,e,i,o,2)):s===2&&St(t,n,r,e,i,o):xn(tn(t),n,r,e,i,o,1);break}}}function mt(t){const n=t.prev,r=t,e=t.next;if(L(n,r,e)>=0)return!1;const i=n.x,o=r.x,s=e.x,l=n.y,u=r.y,h=e.y,f=Math.min(i,o,s),c=Math.min(l,u,h),a=Math.max(i,o,s),d=Math.max(l,u,h);let x=e.next;for(;x!==n;){if(x.x>=f&&x.x<=a&&x.y>=c&&x.y<=d&&gn(i,l,o,u,s,h,x.x,x.y)&&L(x.prev,x,x.next)>=0)return!1;x=x.next}return!0}function pt(t,n,r,e){const i=t.prev,o=t,s=t.next;if(L(i,o,s)>=0)return!1;const l=i.x,u=o.x,h=s.x,f=i.y,c=o.y,a=s.y,d=Math.min(l,u,h),x=Math.min(f,c,a),g=Math.max(l,u,h),E=Math.max(f,c,a),y=Un(d,x,n,r,e),M=Un(g,E,n,r,e);let A=t.prevZ,S=t.nextZ;for(;A&&A.z>=y&&S&&S.z<=M;){if(A.x>=d&&A.x<=g&&A.y>=x&&A.y<=E&&A!==i&&A!==s&&gn(l,f,u,c,h,a,A.x,A.y)&&L(A.prev,A,A.next)>=0||(A=A.prevZ,S.x>=d&&S.x<=g&&S.y>=x&&S.y<=E&&S!==i&&S!==s&&gn(l,f,u,c,h,a,S.x,S.y)&&L(S.prev,S,S.next)>=0))return!1;S=S.nextZ}for(;A&&A.z>=y;){if(A.x>=d&&A.x<=g&&A.y>=x&&A.y<=E&&A!==i&&A!==s&&gn(l,f,u,c,h,a,A.x,A.y)&&L(A.prev,A,A.next)>=0)return!1;A=A.prevZ}for(;S&&S.z<=M;){if(S.x>=d&&S.x<=g&&S.y>=x&&S.y<=E&&S!==i&&S!==s&&gn(l,f,u,c,h,a,S.x,S.y)&&L(S.prev,S,S.next)>=0)return!1;S=S.nextZ}return!0}function yt(t,n){let r=t;do{const e=r.prev,i=r.next.next;!un(e,i)&&Sr(e,r,r.next,i)&&En(e,i)&&En(i,e)&&(n.push(e.i,r.i,i.i),mn(r),mn(r.next),r=t=i),r=r.next}while(r!==t);return tn(r)}function St(t,n,r,e,i,o){let s=t;do{let l=s.next.next;for(;l!==s.prev;){if(s.i!==l.i&&vt(s,l)){let u=Ar(s,l);s=tn(s,s.next),u=tn(u,u.next),xn(s,n,r,e,i,o,0),xn(u,n,r,e,i,o,0);return}l=l.next}s=s.next}while(s!==t)}function At(t,n,r,e){const i=[];for(let o=0,s=n.length;o<s;o++){const l=n[o]*e,u=o<s-1?n[o+1]*e:t.length,h=pr(t,l,u,e,!1);h===h.next&&(h.steiner=!0),i.push(wt(h))}i.sort(Mt);for(let o=0;o<i.length;o++)r=bt(i[o],r);return r}function Mt(t,n){let r=t.x-n.x;if(r===0&&(r=t.y-n.y,r===0)){const e=(t.next.y-t.y)/(t.next.x-t.x),i=(n.next.y-n.y)/(n.next.x-n.x);r=e-i}return r}function bt(t,n){const r=It(t,n);if(!r)return n;const e=Ar(r,t);return tn(e,e.next),tn(r,r.next)}function It(t,n){let r=n;const e=t.x,i=t.y;let o=-1/0,s;if(un(t,r))return r;do{if(un(t,r.next))return r.next;if(i<=r.y&&i>=r.next.y&&r.next.y!==r.y){const c=r.x+(i-r.y)*(r.next.x-r.x)/(r.next.y-r.y);if(c<=e&&c>o&&(o=c,s=r.x<r.next.x?r:r.next,c===e))return s}r=r.next}while(r!==n);if(!s)return null;const l=s,u=s.x,h=s.y;let f=1/0;r=s;do{if(e>=r.x&&r.x>=u&&e!==r.x&&yr(i<h?e:o,i,u,h,i<h?o:e,i,r.x,r.y)){const c=Math.abs(i-r.y)/(e-r.x);En(r,t)&&(c<f||c===f&&(r.x>s.x||r.x===s.x&&Dt(s,r)))&&(s=r,f=c)}r=r.next}while(r!==l);return s}function Dt(t,n){return L(t.prev,t,n.prev)<0&&L(n.next,t,t.next)<0}function Tt(t,n,r,e){let i=t;do i.z===0&&(i.z=Un(i.x,i.y,n,r,e)),i.prevZ=i.prev,i.nextZ=i.next,i=i.next;while(i!==t);i.prevZ.nextZ=null,i.prevZ=null,Rt(i)}function Rt(t){let n,r=1;do{let e=t,i;t=null;let o=null;for(n=0;e;){n++;let s=e,l=0;for(let h=0;h<r&&(l++,s=s.nextZ,!!s);h++);let u=r;for(;l>0||u>0&&s;)l!==0&&(u===0||!s||e.z<=s.z)?(i=e,e=e.nextZ,l--):(i=s,s=s.nextZ,u--),o?o.nextZ=i:t=i,i.prevZ=o,o=i;e=s}o.nextZ=null,r*=2}while(n>1);return t}function Un(t,n,r,e,i){return t=(t-r)*i|0,n=(n-e)*i|0,t=(t|t<<8)&16711935,t=(t|t<<4)&252645135,t=(t|t<<2)&858993459,t=(t|t<<1)&1431655765,n=(n|n<<8)&16711935,n=(n|n<<4)&252645135,n=(n|n<<2)&858993459,n=(n|n<<1)&1431655765,t|n<<1}function wt(t){let n=t,r=t;do(n.x<r.x||n.x===r.x&&n.y<r.y)&&(r=n),n=n.next;while(n!==t);return r}function yr(t,n,r,e,i,o,s,l){return(i-s)*(n-l)>=(t-s)*(o-l)&&(t-s)*(e-l)>=(r-s)*(n-l)&&(r-s)*(o-l)>=(i-s)*(e-l)}function gn(t,n,r,e,i,o,s,l){return!(t===s&&n===l)&&yr(t,n,r,e,i,o,s,l)}function vt(t,n){return t.next.i!==n.i&&t.prev.i!==n.i&&!Lt(t,n)&&(En(t,n)&&En(n,t)&&$t(t,n)&&(L(t.prev,t,n.prev)||L(t,n.prev,n))||un(t,n)&&L(t.prev,t,t.next)>0&&L(n.prev,n,n.next)>0)}function L(t,n,r){return(n.y-t.y)*(r.x-n.x)-(n.x-t.x)*(r.y-n.y)}function un(t,n){return t.x===n.x&&t.y===n.y}function Sr(t,n,r,e){const i=bn(L(t,n,r)),o=bn(L(t,n,e)),s=bn(L(r,e,t)),l=bn(L(r,e,n));return!!(i!==o&&s!==l||i===0&&Mn(t,r,n)||o===0&&Mn(t,e,n)||s===0&&Mn(r,t,e)||l===0&&Mn(r,n,e))}function Mn(t,n,r){return n.x<=Math.max(t.x,r.x)&&n.x>=Math.min(t.x,r.x)&&n.y<=Math.max(t.y,r.y)&&n.y>=Math.min(t.y,r.y)}function bn(t){return t>0?1:t<0?-1:0}function Lt(t,n){let r=t;do{if(r.i!==t.i&&r.next.i!==t.i&&r.i!==n.i&&r.next.i!==n.i&&Sr(r,r.next,t,n))return!0;r=r.next}while(r!==t);return!1}function En(t,n){return L(t.prev,t,t.next)<0?L(t,n,t.next)>=0&&L(t,t.prev,n)>=0:L(t,n,t.prev)<0||L(t,t.next,n)<0}function $t(t,n){let r=t,e=!1;const i=(t.x+n.x)/2,o=(t.y+n.y)/2;do r.y>o!=r.next.y>o&&r.next.y!==r.y&&i<(r.next.x-r.x)*(o-r.y)/(r.next.y-r.y)+r.x&&(e=!e),r=r.next;while(r!==t);return e}function Ar(t,n){const r=Yn(t.i,t.x,t.y),e=Yn(n.i,n.x,n.y),i=t.next,o=n.prev;return t.next=n,n.prev=t,r.next=i,i.prev=r,e.next=r,r.prev=e,o.next=e,e.prev=o,e}function Mr(t,n,r,e){const i=Yn(t,n,r);return e?(i.next=e.next,i.prev=e,e.next.prev=i,e.next=i):(i.prev=i,i.next=i),i}function mn(t){t.next.prev=t.prev,t.prev.next=t.next,t.prevZ&&(t.prevZ.nextZ=t.nextZ),t.nextZ&&(t.nextZ.prevZ=t.prevZ)}function Yn(t,n,r){return{i:t,x:n,y:r,prev:null,next:null,z:0,prevZ:null,nextZ:null,steiner:!1}}function Nt(t,n,r,e){let i=0;for(let o=n,s=r-e;o<r;o+=e)i+=(t[s]-t[o])*(t[o+1]+t[s+1]),s=o;return i}function Ct(t,n,r){const e=()=>w("invalid-mesh","STLの面・接続・精度を保証できません。幅またはモデルを見直してください。");if(t.triangles.length>2e5)return w("limit","三角形数が200,000枚を超えます。");if(!t.triangles.length||!t.vertices.length||!Number.isFinite(r)||r<=0)return e();const i=m=>m.map(p=>[Math.fround(p[0]),Math.fround(p[1])]),o=i(n.outer),s=n.holes.map(i),l=Math.fround(r),u={...n,outer:o,holes:s,bounds:{widthMm:Math.max(...o.map(m=>m[0])),heightMm:Math.max(...o.map(m=>m[1]))},areaMm2:G(o)+s.reduce((m,p)=>m+G(p),0)};if(!kn(n,u).ok)return w("precision-loss","STLのfloat32変換で輪郭や穴が潰れます。幅かモデルを見直してください。");const h=[o,...s].flat(),f=h.length,c=m=>m.join(","),a=new Set([...h.map(([m,p])=>`${m},${p},0`),...h.map(([m,p])=>`${m},${p},${l}`)]),d=new Map;for(const[m,p]of t.vertices.entries()){if(p.length!==3||!p.every(Number.isFinite)||p.some(I=>Math.fround(I)!==I))return e();const b=c(p);if(!a.has(b)||d.has(b))return e();d.set(b,m)}if(a.size!==2*f||d.size!==a.size)return e();const x=new Set,g=m=>[...m].sort((p,b)=>p-b).join(",");for(const m of[o,...s])for(let p=0;p<m.length;p++){const[b,I]=m[p],[R,C]=m[(p+1)%m.length],F=d.get(`${b},${I},0`),Q=d.get(`${R},${C},0`),an=d.get(`${R},${C},${l}`),In=d.get(`${b},${I},${l}`);x.add(g([F,Q,an])),x.add(g([F,an,In]))}const E=new Map,y=new Set,M=t.vertices.map(()=>new Set),A=[],S=new Set,D=[0,0];let v=0;for(const[m,p]of t.triangles.entries()){if(p.length!==3||p.some(P=>!Number.isInteger(P)||P<0||P>=t.vertices.length)||new Set(p).size!==3)return e();const b=g(p);if(y.has(b))return e();y.add(b);const[I,R,C]=p.map(P=>t.vertices[P]),F=R.map((P,Y)=>P-I[Y]),Q=C.map((P,Y)=>P-I[Y]),an=[F[1]*Q[2]-F[2]*Q[1],F[2]*Q[0]-F[0]*Q[2],F[0]*Q[1]-F[1]*Q[0]];if(Math.hypot(...an)<=1e-9)return e();const In=I[2]===R[2]&&R[2]===C[2];if(In){const P=I[2]===l;if(an[2]>0!==P)return e();D[P?1:0]+=Math.abs(an[2])/2;const Y=[(I[0]+R[0]+C[0])/3,(I[1]+R[1]+C[1])/3];if(Z(Y,o)!==1||s.some(J=>Z(Y,J)>=0))return e()}else if(!x.delete(b))return e();v+=(I[0]*(R[1]*C[2]-R[2]*C[1])+I[1]*(R[2]*C[0]-R[0]*C[2])+I[2]*(R[0]*C[1]-R[1]*C[0]))/6;for(const P of p)M[P].add(m);for(let P=0;P<3;P++){const Y=p[P],J=p[(P+1)%3],Dn=`${Math.min(Y,J)},${Math.max(Y,J)}`,Xn=E.get(Dn)??{a:Y,b:J,faces:[],direction:0};if(Xn.faces.push(m),Xn.direction+=Y<J?1:-1,E.set(Dn,Xn),In&&!S.has(Dn)){S.add(Dn);const pn=t.vertices[Y],Tn=t.vertices[J];A.push({a:Y,b:J,z:pn[2],minX:Math.min(pn[0],Tn[0]),maxX:Math.max(pn[0],Tn[0]),minY:Math.min(pn[1],Tn[1]),maxY:Math.max(pn[1],Tn[1])})}}}if(x.size||D.some(m=>Math.abs(m/n.areaMm2-1)>1e-5)||v<=0||Math.abs(v/(n.areaMm2*r)-1)>1e-5)return e();const B=t.triangles.map(()=>new Set),$=t.vertices.map(()=>new Map);for(const m of E.values()){if(m.faces.length!==2||m.direction!==0)return e();const[p,b]=m.faces;B[p].add(b),B[b].add(p);for(const I of[m.a,m.b])for(const[R,C]of[[p,b],[b,p]]){const F=$[I].get(R)??new Set;F.add(C),$[I].set(R,F)}}const _=(m,p,b)=>{const I=new Set([m]),R=[m];for(let C=0;C<R.length;C++)for(const F of p(R[C]))I.has(F)||(I.add(F),R.push(F));return I.size===b};if(!_(0,m=>B[m],t.triangles.length)||M.some((m,p)=>!m.size||!_(m.values().next().value,b=>$[p].get(b)??[],m.size)))return e();A.sort((m,p)=>m.minX-p.minX);let O=[];const T=m=>[t.vertices[m][0],t.vertices[m][1]];for(const m of A){O=O.filter(p=>p.maxX+1e-9>=m.minX);for(const p of O){if(m.z!==p.z||m.maxY+1e-9<p.minY||p.maxY+1e-9<m.minY)continue;const b=[m.a,m.b].find(I=>I===p.a||I===p.b);if(b!==void 0){const I=m.a===b?m.b:m.a,R=p.a===b?p.b:p.a;if(nn(T(I),T(p.a),T(p.b))||nn(T(R),T(m.a),T(m.b)))return e()}else if(Yr(T(m.a),T(m.b),T(p.a),T(p.b)))return e()}O.push(m)}return{ok:!0,value:t}}function Ot(t,n){const r=Bn({format:"stl",widthText:String(t.widthMm),thicknessText:String(n)});if(!r.ok)return r;const e=cn(t);if(!e.ok)return e;const i=[t.outer,...t.holes],o=i.flat().map(([l,u])=>[Math.fround(l),Math.fround(u)]),s=o.length;if(4*s+4*t.holes.length-4>2e5)return w("limit","三角形数が200,000枚を超えます。");try{const l=[];let u=t.outer.length;for(const g of t.holes)l.push(u),u+=g.length;const h=Et(o.flatMap(g=>[...g]),l,2),f=[];for(let g=0;g<h.length;g+=3){const E=h[g],y=h[g+1],M=h[g+2];f.push(sn(o[E],o[y],o[M])>0?[E,y,M]:[E,M,y])}const c=o.map((g,E)=>E).sort((g,E)=>o[g][0]-o[E][0]),a=[...f],d=[];for(;a.length;){const g=a.pop();let E=!1;for(let y=0;y<3&&!E;y++){const M=g[y],A=g[(y+1)%3],S=g[(y+2)%3],D=o[M],v=o[A],B=Math.min(D[0],v[0])-1e-9,$=Math.max(D[0],v[0])+1e-9;let _=0,O=c.length;for(;_<O;){const m=_+O>>>1;o[c[m]][0]<B?_=m+1:O=m}const T=[];for(let m=_;m<c.length&&o[c[m]][0]<=$;m++){const p=c[m];p!==M&&p!==A&&p!==S&&nn(o[p],D,v)&&T.push(p)}if(T.length){T.sort((p,b)=>Math.hypot(o[p][0]-D[0],o[p][1]-D[1])-Math.hypot(o[b][0]-D[0],o[b][1]-D[1]));const m=[M,...T,A];for(let p=0;p+1<m.length;p++)a.push([m[p],m[p+1],S]);E=!0}}if(E||d.push(g),2*(d.length+a.length)+2*s>2e5)return w("limit","三角形数が200,000枚を超えます。")}const x={vertices:[...o.map(([g,E])=>[Math.fround(g),Math.fround(E),0]),...o.map(([g,E])=>[Math.fround(g),Math.fround(E),Math.fround(n)])],triangles:[]};for(const[g,E,y]of d)x.triangles.push([g,y,E],[g+s,E+s,y+s]);u=0;for(const g of i){for(let E=0;E<g.length;E++){const y=u+E,M=u+(E+1)%g.length;x.triangles.push([y,M,M+s],[y,M+s,y+s])}u+=g.length}return Ct(x,t,n)}catch{return w("triangulation-failed","穴付き輪郭の三角形分割に失敗しました。幅かモデルを見直してください。")}}function _t(t){if(!t.triangles.length||t.triangles.length>2e5)throw new Error("STLの三角形数が不正です。");const n=new ArrayBuffer(84+50*t.triangles.length),r=new DataView(n);new Uint8Array(n,0,80).set(new TextEncoder().encode("VBC side frame; coordinates interpreted as mm")),r.setUint32(80,t.triangles.length,!0);for(const[e,i]of t.triangles.entries()){if(i.length!==3||i.some(x=>!Number.isInteger(x)||x<0||x>=t.vertices.length))throw new Error("STLの頂点が不正です。");const[o,s,l]=i.map(x=>t.vertices[x].map(Math.fround));if(![...o,...s,...l].every(Number.isFinite))throw new Error("STLの座標が不正です。");const u=s.map((x,g)=>x-o[g]),h=l.map((x,g)=>x-o[g]),f=[u[1]*h[2]-u[2]*h[1],u[2]*h[0]-u[0]*h[2],u[0]*h[1]-u[1]*h[0]],c=Math.hypot(...f);if(!c||!Number.isFinite(c))throw new Error("STLの面が退化しています。");const a=[...f.map(x=>x/c),...o,...s,...l],d=84+e*50;a.forEach((x,g)=>r.setFloat32(d+g*4,x,!0)),r.setUint16(d+48,0,!0)}return n}function Pt(t,n){return`bridge-side-frame-w${t.toFixed(1)}-t${n.toFixed(1)}mm.stl`}function Bt(t){const n=r=>({requestId:t.requestId,sourceVersion:t.sourceVersion,result:r});try{if(t.kind==="preview"){const o=Xr(t.model);if(!o.ok)return n(o);const s=at(o.value,t.widthMm);return n(s.ok?{ok:!0,value:{kind:"preview",profile:s.value}}:s)}const r=Bn({format:t.settings.format,widthText:String(t.settings.widthMm),thicknessText:t.settings.format==="stl"?String(t.settings.thicknessMm):""});if(!r.ok)return n(r);if(t.profile.widthMm!==r.value.widthMm)return n(w("invalid-input","プレビューと出力の幅が一致しません。"));const e=cn(t.profile);if(!e.ok)return n(e);if(r.value.format==="dxf"){const o=new TextEncoder().encode(gt(t.profile)).buffer;return n({ok:!0,value:{kind:"export",artifact:{format:"dxf",bytes:o,mime:"application/dxf",fileName:xt(r.value.widthMm)}}})}const i=Ot(t.profile,r.value.thicknessMm);return i.ok?n({ok:!0,value:{kind:"export",artifact:{format:"stl",bytes:_t(i.value),mime:"model/stl",fileName:Pt(r.value.widthMm,r.value.thicknessMm)}}}):n(i)}catch{return n(w("file-failed","加工用ファイルの生成に失敗しました。条件を見直して再試行してください。"))}}const br=self;br.addEventListener("message",t=>{const n=Bt(t.data),r=n.result.ok&&n.result.value.kind==="export"?[n.result.value.artifact.bytes]:[];br.postMessage(n,r)})})();
