@@ -910,11 +910,11 @@ globalThis.FanGrid = [
         const nets=Array.from({length:members},(_,i)=>{
             const random=randomSource((seed+Math.imul(i+1,2654435761))>>>0);
             const net=network(random);
-            // Bootstrap complete designs so repeated measurements stay together.
-            net.samples=Array.from({length:points.length},()=>{
-                const group=points[Math.floor(random()*points.length)];
-                return {x:coords(group.row),y:(group.mean-center)/scale,weight:group.count};
-            });
+            // Every network trains on every design. A group's mean and count retain
+            // all repeated observations' contribution to the squared-error objective.
+            net.samples=points.map(group=>({
+                x:coords(group.row),y:(group.mean-center)/scale,weight:group.count
+            }));
             return net;
         });
         let epoch=0;
@@ -961,13 +961,13 @@ globalThis.FanGrid = [
                 return predictEnsemble(nets,center,scale,unit,noise,FanML.validateRow({width,pitch,count,speed:0}));
             },
             toJSON() {
-                return {version:1,ranges:JSON.stringify(FanRanges),center,scale,unit,noise,
+                return {version:2,ranges:JSON.stringify(FanRanges),center,scale,unit,noise,
                     weights:nets.map(net=>net.layers.map(layer=>Array.from(layer.weights)))};
             }
         };
     }
     function restore(snapshot) {
-        if (!snapshot || snapshot.version!==1 || snapshot.ranges!==JSON.stringify(FanRanges) ||
+        if (!snapshot || snapshot.version!==2 || snapshot.ranges!==JSON.stringify(FanRanges) ||
             ![snapshot.center,snapshot.scale,snapshot.unit,snapshot.noise].every(Number.isFinite) ||
             snapshot.scale<=0 || snapshot.unit<1 || snapshot.noise<0 ||
             !Array.isArray(snapshot.weights) || snapshot.weights.length!==members) throw Error("保存されたモデルが無効です。");
@@ -8665,12 +8665,12 @@ function activateModels() {
     renderLearning();
 }
 function deepSignature(data,epochs) {
-    return JSON.stringify({version:1,epochs,ranges:FanRanges,
+    return JSON.stringify({version:2,epochs,ranges:FanRanges,
         rows:data.map(row=>[row.width,row.pitch,row.count,row.speed])});
 }
 function restoreDeepModel(kind,data,epochs) {
     try {
-        const text = localStorage.getItem("ML_HandyFan.deep."+kind+".v1");
+        const text = localStorage.getItem("ML_HandyFan.deep."+kind+".v2");
         if (!text || text.length>2000000) return null;
         const saved = JSON.parse(text);
         if (saved.signature !== deepSignature(data,epochs)) return null;
@@ -8679,7 +8679,7 @@ function restoreDeepModel(kind,data,epochs) {
 }
 function saveDeepModel(kind,data,epochs,model) {
     try {
-        localStorage.setItem("ML_HandyFan.deep."+kind+".v1",
+        localStorage.setItem("ML_HandyFan.deep."+kind+".v2",
             JSON.stringify({signature:deepSignature(data,epochs),model:model.toJSON()}));
     } catch { /* Restricted previews can still use the model during this session. */ }
 }
