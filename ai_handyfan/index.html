@@ -438,6 +438,8 @@ td button {
 #stl-error { color:#9c381b; font-size:14px; white-space:pre-line; }
 #stl-status:empty,#stl-error:empty { display:none; }
 
+.source-buttons { margin-top: -4px; }
+
 </style>
 </head>
 <body>
@@ -460,9 +462,10 @@ td button {
 </section>
 <section id="learning" class="card learning" hidden><h2>風速を予測する</h2>
 <div id="learning-method" class="method-buttons" role="group" aria-label="学習方法"><button data-method="gp" aria-pressed="true">ガウス過程回帰</button><button data-method="deep" aria-pressed="false">Deep Learning</button></div>
+<div id="prediction-source" class="method-buttons source-buttons" role="group" aria-label="実測データの利用方法"><button data-source="hybrid" aria-pressed="true">計算＋実測</button><button data-source="measured" aria-pressed="false">実測のみ</button></div>
 <input id="training-size" type="hidden" value="100">
 <input id="deep-epochs" type="hidden" value="400">
-<div class="predictions"><div><span class="legend-dot"></span>計算データで学習<strong id="gp-sim">—</strong><small id="int-sim"></small></div><div><span class="legend-dot gold"></span>実測データで学習<strong id="gp-real">—</strong><small id="int-real">設計欄の下から実測値を追加してください。</small></div></div>
+<div class="predictions"><div><span class="legend-dot"></span>計算データで学習<strong id="gp-sim">—</strong><small id="int-sim"></small></div><div><span class="legend-dot gold"></span><span id="prediction-label">計算＋実測で補正</span><strong id="gp-real">—</strong><small id="int-real">設計欄の下から実測値を追加してください。</small></div></div>
 <div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div><div class="plot-head"><h3 id="plot-title">羽根の先端幅と予測風速</h3><small id="plot-context"></small></div><div id="plot"></div><p class="note" id="sim-error" role="alert" hidden></p></section>
 </div>
 <section id="measurements" class="card data-card" hidden><div class="panel-head"><h2>実測値　学習データ一覧</h2><span class="chip" id="row-count">0 件</span></div><p class="intro">前後ガードを取り付け、前面ガードの外面から回転軸に沿って50 mmの位置に風速計の検出部を置いてください。同じ条件の繰り返し測定も1回につき1行で記録します。</p>
@@ -644,6 +647,11 @@ globalThis.FanGrid = [
     return {...p, speed};
   }
 
+  // Signed targets are only used by internal model-error fitting.
+  function validateResidual(input) {
+    return {...design(input || {}), speed:number(input?.speed, '補正量')};
+  }
+
   function rowLimit() {
     throw new Error('データは5000行までです。行数を減らしてください。');
   }
@@ -747,15 +755,15 @@ globalThis.FanGrid = [
     return x;
   }
 
-  function train(rows, {measured = false} = {}) {
+  function train(rows, {measured = false, residual = false} = {}) {
     if (!Array.isArray(rows) || !rows.length) throw new Error('学習には1件以上のデータが必要です。');
     if (rows.length > MAX_ROWS) rowLimit();
     const data = rows.map((row,i) => {
-      try { return validateRow(row); }
+      try { return residual ? validateResidual(row) : validateRow(row); }
       catch (error) { throw new Error((i+1) + '行目：' + error.message); }
     });
     // Scale before computing moments so finite large input values cannot overflow when squared.
-    const unit = data.reduce((max,r) => Math.max(max,r.speed), 1);
+    const unit = data.reduce((max,r) => Math.max(max,Math.abs(r.speed)), 1);
     const groups = new Map();
     let within = 0;
     for (const row of data) {
@@ -771,7 +779,7 @@ globalThis.FanGrid = [
     }
     const points = [...groups.values()];
     const n = points.length;
-    const center = points.reduce((sum,g) => sum+g.mean,0)/n;
+    const center = residual ? 0 : points.reduce((sum,g) => sum+g.mean,0)/n;
     const spread = Math.sqrt(points.reduce((sum,g) => sum+(g.mean-center)**2,0)/n);
     const amplitude = Math.max(0.5/unit, center*0.1, spread);
     // For group averages the measurement variance is divided by the group's repeat count.
@@ -811,14 +819,14 @@ globalThis.FanGrid = [
     };
   }
 
-  globalThis.FanML = Object.freeze({validateRow, parseCSV, train, splitGrid});
+  globalThis.FanML = Object.freeze({validateRow, validateResidual, parseCSV, train, splitGrid});
 })();
 
 </script>
 <script>
 (() => {
     "use strict";
-    const sizes = [3, 16, 16, 1];
+    const fullSizes = [3, 16, 16, 1], residualSizes = [3, 8, 8, 1];
     const members = 5;
     function randomSource(seed) {
         return () => {
@@ -832,7 +840,8 @@ globalThis.FanGrid = [
             return 2 * (row[key] - range.min) / (range.max - range.min) - 1;
         });
     }
-    function network(random) {
+    function network(random, residual) {
+        const sizes = residual ? residualSizes : fullSizes;
         const layers = sizes.slice(1).map((outputs, index) => {
             const inputs = sizes[index];
             const weights = new Float64Array(outputs * (inputs + 1));
@@ -842,6 +851,8 @@ globalThis.FanGrid = [
             }
             return {inputs,outputs,weights,m:new Float64Array(weights.length),v:new Float64Array(weights.length)};
         });
+        // Start the correction at the fixed base prediction.
+        if(residual) layers.at(-1).weights.fill(0);
         return {layers,step:0,random};
     }
     function forward(net, input) {
@@ -858,7 +869,7 @@ globalThis.FanGrid = [
         }
         return values;
     }
-    function trainBatch(net, samples, start, end) {
+    function trainBatch(net, samples, start, end, regularization) {
         const gradients=net.layers.map(layer=>new Float64Array(layer.weights.length));
         let totalWeight=0;
         for(let n=start;n<end;n++) {
@@ -882,17 +893,18 @@ globalThis.FanGrid = [
         net.step++;
         const correctionM=1-0.9**net.step, correctionV=1-0.999**net.step;
         for(const [l,layer] of net.layers.entries()) for(let i=0;i<layer.weights.length;i++) {
-            const gradient=Math.max(-10,Math.min(10,gradients[l][i]/totalWeight));
+            const penalty=i%(layer.inputs+1)===layer.inputs ? 0 : 2*regularization*layer.weights[i];
+            const gradient=Math.max(-10,Math.min(10,gradients[l][i]/totalWeight+penalty));
             layer.m[i]=0.9*layer.m[i]+0.1*gradient;
             layer.v[i]=0.999*layer.v[i]+0.001*gradient*gradient;
             layer.weights[i]-=0.005*(layer.m[i]/correctionM)/(Math.sqrt(layer.v[i]/correctionV)+1e-8);
         }
     }
-    function createTraining(rows,{epochs=400,measured=false,seed=20261105}={}) {
+    function createTraining(rows,{epochs=400,measured=false,seed=20261105,residual=false}={}) {
         if(!Number.isInteger(epochs)||epochs<1||epochs>2000) throw Error("学習回数は1～2000の整数で指定してください。");
         if(!Array.isArray(rows)||!rows.length||rows.length>5000) throw Error("学習データは1～5000件で指定してください。");
-        const data=rows.map(FanML.validateRow);
-        const unit=data.reduce((m,r)=>Math.max(m,r.speed),1);
+        const data=rows.map(residual ? FanML.validateResidual : FanML.validateRow);
+        const unit=data.reduce((m,r)=>Math.max(m,Math.abs(r.speed)),1);
         const groups=new Map();
         let within=0;
         for(const row of data) {
@@ -904,12 +916,12 @@ globalThis.FanGrid = [
         }
         if(groups.size>300) throw Error("異なる設計は300通りまでです。");
         const points=[...groups.values()];
-        const center=points.reduce((s,g)=>s+g.mean*g.count,0)/data.length;
+        const center=residual ? 0 : points.reduce((s,g)=>s+g.mean*g.count,0)/data.length;
         const scale=Math.max(0.5/unit,Math.sqrt(points.reduce((s,g)=>s+g.count*(g.mean-center)**2,0)/data.length));
         const noise=measured ? Math.max(0.1/unit,Math.sqrt(Math.max(0,within)/Math.max(1,data.length-points.length))) : 0;
         const nets=Array.from({length:members},(_,i)=>{
             const random=randomSource((seed+Math.imul(i+1,2654435761))>>>0);
-            const net=network(random);
+            const net=network(random,residual);
             // Every network trains on every design. A group's mean and count retain
             // all repeated observations' contribution to the squared-error objective.
             net.samples=points.map(group=>({
@@ -935,13 +947,16 @@ globalThis.FanGrid = [
                         const j=Math.floor(net.random()*(i+1));
                         [net.samples[i],net.samples[j]]=[net.samples[j],net.samples[i]];
                     }
-                    for(let start=0;start<net.samples.length;start+=32) trainBatch(net,net.samples,start,Math.min(start+32,net.samples.length));
+                    // A full grouped residual batch preserves relative repeat counts
+                    // even when a design has far more observations than its neighbors.
+                    const batchSize=residual ? net.samples.length : 32;
+                    for(let start=0;start<net.samples.length;start+=batchSize) trainBatch(net,net.samples,start,Math.min(start+batchSize,net.samples.length),residual ? 1e-4 : 0);
                 }
                 return progress();
             },
             model() {
                 if(epoch!==epochs) throw Error("学習が完了していません。");
-                return makeModel(nets,center,scale,unit,noise);
+                return makeModel(nets,center,scale,unit,noise,residual);
             }
         };
     }
@@ -955,19 +970,21 @@ globalThis.FanGrid = [
             return {mean,sd};
         }
 
-    function makeModel(nets,center,scale,unit,noise) {
+    function makeModel(nets,center,scale,unit,noise,residual=false) {
         return {
             predict(width,pitch,count) {
                 return predictEnsemble(nets,center,scale,unit,noise,FanML.validateRow({width,pitch,count,speed:0}));
             },
             toJSON() {
-                return {version:2,ranges:JSON.stringify(FanRanges),center,scale,unit,noise,
+                return {version:residual ? 3 : 2,...(residual ? {residual:true} : {}),ranges:JSON.stringify(FanRanges),center,scale,unit,noise,
                     weights:nets.map(net=>net.layers.map(layer=>Array.from(layer.weights)))};
             }
         };
     }
     function restore(snapshot) {
-        if (!snapshot || snapshot.version!==2 || snapshot.ranges!==JSON.stringify(FanRanges) ||
+        const residual=snapshot?.version===3 && snapshot.residual===true;
+        const sizes=residual ? residualSizes : fullSizes;
+        if (!snapshot || !(snapshot.version===2 && !snapshot.residual || residual) || snapshot.ranges!==JSON.stringify(FanRanges) ||
             ![snapshot.center,snapshot.scale,snapshot.unit,snapshot.noise].every(Number.isFinite) ||
             snapshot.scale<=0 || snapshot.unit<1 || snapshot.noise<0 ||
             !Array.isArray(snapshot.weights) || snapshot.weights.length!==members) throw Error("保存されたモデルが無効です。");
@@ -979,7 +996,7 @@ globalThis.FanGrid = [
                 return {inputs,outputs,weights:Float64Array.from(values)};
             })};
         });
-        const model = makeModel(nets,snapshot.center,snapshot.scale,snapshot.unit,snapshot.noise);
+        const model = makeModel(nets,snapshot.center,snapshot.scale,snapshot.unit,snapshot.noise,residual);
         for (const width of [FanRanges.width.min,FanRanges.width.max]) {
             for (const pitch of [FanRanges.pitch.min,FanRanges.pitch.max]) {
                 for (const count of [FanRanges.count.min,FanRanges.count.max]) model.predict(width,pitch,count);
@@ -993,6 +1010,38 @@ globalThis.FanGrid = [
         return job.model();
     }
     globalThis.FanDeep=Object.freeze({createTraining,train,restore});
+})();
+
+</script>
+<script>
+(() => {
+    "use strict";
+    function basePrediction(baseline,width,pitch,count) {
+        const prediction=baseline.predict(width,pitch,count);
+        if(!prediction || !Number.isFinite(prediction.mean)) throw Error("基準モデルの予測が無効です。");
+        return prediction;
+    }
+    function residualRows(rows,baseline) {
+        return rows.map(input=>{
+            const row=FanML.validateRow(input);
+            const base=basePrediction(baseline,row.width,row.pitch,row.count);
+            return FanML.validateResidual({...row,speed:row.speed-base.mean});
+        });
+    }
+    function combine(baseline,correction) {
+        return {
+            predict(width,pitch,count) {
+                const base=basePrediction(baseline,width,pitch,count);
+                const delta=correction.predict(width,pitch,count);
+                const mean=base.mean+delta.mean,sd=delta.sd;
+                if(!Number.isFinite(mean)||!Number.isFinite(sd)||sd<0) throw Error("補正後の予測が無効です。");
+                // Conditional on the fixed base; adding its variance as if it were
+                // independent of residuals fitted against that base would double-count.
+                return {mean,sd};
+            }
+        };
+    }
+    globalThis.FanHybrid=Object.freeze({residualRows,combine});
 })();
 
 </script>
@@ -8516,6 +8565,7 @@ let fittedRows = [];
 let trainingDesigns = [];
 let learningMethod = "gp", gpSimModel = null, gpMeasuredModel = null;
 let deepSimModel = null, deepMeasuredModel = null, deepEpochs = 400;
+let dataSource = "hybrid", gpCorrectionModel = null, deepCorrectionModel = null;
 let deepJob = 0, deepBusy = false;
 let worker = null, workerURL = null, localOnly = false, revision = 0, timer, currentKey = "", lastResult = null;
 const cache = new Map();
@@ -8652,8 +8702,12 @@ function prepareSimModel() {
     try {
         trainingDesigns = simulationTrainingRows();
         if (!gpSimModel) gpSimModel = FanML.train(trainingDesigns);
-        simModel = gpSimModel;
+        if (measuredRows.length) {
+            if (!gpMeasuredModel) gpMeasuredModel = FanML.train(measuredRows,{measured:true});
+            if (!gpCorrectionModel) gpCorrectionModel = FanML.train(FanHybrid.residualRows(measuredRows,gpSimModel),{measured:true,residual:true});
+        }
         $("sim-error").hidden = true;
+        activateModels();
     } catch (error) {
         $("sim-error").textContent = "計算データを学習できません。" + error.message;
         $("sim-error").hidden = false;
@@ -8661,27 +8715,47 @@ function prepareSimModel() {
 }
 function activateModels() {
     simModel = learningMethod === "gp" ? gpSimModel : deepSimModel;
-    measuredModel = learningMethod === "gp" ? gpMeasuredModel : deepMeasuredModel;
+    const correction = learningMethod === "gp" ? gpCorrectionModel : deepCorrectionModel;
+    measuredModel = dataSource === "hybrid"
+        ? (simModel && correction ? FanHybrid.combine(simModel,correction) : null)
+        : (learningMethod === "gp" ? gpMeasuredModel : deepMeasuredModel);
+    $("prediction-label").textContent = dataSource === "hybrid" ? "計算＋実測で補正" : "実測データで学習";
     renderLearning();
 }
-function deepSignature(data,epochs) {
-    return JSON.stringify({version:2,epochs,ranges:FanRanges,
-        rows:data.map(row=>[row.width,row.pitch,row.count,row.speed])});
+function deepStorageKey(kind) {
+    return "ML_HandyFan.deep."+kind+(kind === "correction" ? ".v1" : ".v2");
+}
+function deepSignature(data,epochs,kind) {
+    const signature = {version:2,epochs,ranges:FanRanges,
+        rows:data.map(row=>[row.width,row.pitch,row.count,row.speed])};
+    if (kind === "correction") {
+        signature.version = 1;
+        signature.residual = true;
+        signature.baseline = deepSimModel.toJSON();
+    }
+    return JSON.stringify(signature);
 }
 function restoreDeepModel(kind,data,epochs) {
     try {
-        const text = localStorage.getItem("ML_HandyFan.deep."+kind+".v2");
+        const text = localStorage.getItem(deepStorageKey(kind));
         if (!text || text.length>2000000) return null;
         const saved = JSON.parse(text);
-        if (saved.signature !== deepSignature(data,epochs)) return null;
+        if (saved.signature !== deepSignature(data,epochs,kind)) return null;
+        if (kind === "correction" ? saved.model.version !== 3 || saved.model.residual !== true : saved.model.version !== 2) return null;
         return FanDeep.restore(saved.model);
     } catch { return null; }
 }
 function saveDeepModel(kind,data,epochs,model) {
     try {
-        localStorage.setItem("ML_HandyFan.deep."+kind+".v2",
-            JSON.stringify({signature:deepSignature(data,epochs),model:model.toJSON()}));
+        localStorage.setItem(deepStorageKey(kind),
+            JSON.stringify({signature:deepSignature(data,epochs,kind),model:model.toJSON()}));
     } catch { /* Restricted previews can still use the model during this session. */ }
+}
+function invalidateDeepMeasurements() {
+    deepMeasuredModel = deepCorrectionModel = null;
+    for (const kind of ["measured","correction"]) {
+        try { localStorage.removeItem(deepStorageKey(kind)); } catch { /* Memory-only preview. */ }
+    }
 }
 function stopDeepTraining() {
     deepJob++;
@@ -8697,17 +8771,17 @@ async function trainDeepModels() {
     stopDeepTraining();
     if (epochs !== deepEpochs) {
         deepSimModel = null;
-        deepMeasuredModel = null;
+        invalidateDeepMeasurements();
     }
     deepEpochs = epochs;
     const token = deepJob, rows = measuredRows.map(row => ({...row}));
+    const kind = dataSource === "hybrid" ? "correction" : "measured";
     trainingDesigns = simulationTrainingRows();
     if (!deepSimModel) deepSimModel = restoreDeepModel("sim",trainingDesigns,epochs);
-    if (rows.length && !deepMeasuredModel) deepMeasuredModel = restoreDeepModel("measured",rows,epochs);
     deepBusy = true;
     activateModels();
-    async function fit(data, measured) {
-        const job = FanDeep.createTraining(data,{epochs,measured});
+    async function fit(data, measured, residual = false) {
+        const job = FanDeep.createTraining(data,{epochs,measured,residual});
         let progress;
         do {
             if (token !== deepJob) return null;
@@ -8724,11 +8798,17 @@ async function trainDeepModels() {
             saveDeepModel("sim",trainingDesigns,epochs,model);
             activateModels();
         }
-        if (rows.length && !deepMeasuredModel) {
-            const model = await fit(rows,true);
-            if (token !== deepJob) return;
-            deepMeasuredModel = model;
-            saveDeepModel("measured",rows,epochs,model);
+        if (rows.length) {
+            let model = kind === "correction" ? deepCorrectionModel : deepMeasuredModel;
+            if (!model) model = restoreDeepModel(kind,rows,epochs);
+            if (!model) {
+                const data = kind === "correction" ? FanHybrid.residualRows(rows,deepSimModel) : rows;
+                model = await fit(data,true,kind === "correction");
+                if (token !== deepJob) return;
+                saveDeepModel(kind,rows,epochs,model);
+            }
+            if (kind === "correction") deepCorrectionModel = model;
+            else deepMeasuredModel = model;
         }
         if (token !== deepJob) return;
         activateModels();
@@ -8738,9 +8818,7 @@ async function trainDeepModels() {
             $("sim-error").hidden = false;
         }
     } finally {
-        if (token === deepJob) {
-            deepBusy = false;
-        }
+        if (token === deepJob) deepBusy = false;
     }
 }
 function interval(p) { return [p.mean - 1.96 * p.sd, p.mean + 1.96 * p.sd]; }
@@ -8752,7 +8830,7 @@ function showPrediction(model, id, intervalId) {
     }
     const p = model.predict(design.width, design.pitch, design.count);
     $(id).textContent = fmt(p.mean) + " m/s";
-    $(intervalId).textContent = (learningMethod === "gp" ? "約95%区間 " : "予測の幅（目安） ") + interval(p).map(v => fmt(v)).join(" ～ ") + " m/s";
+    $(intervalId).textContent = (learningMethod === "gp" && !(id === "gp-real" && dataSource === "hybrid") ? "約95%区間 " : "予測の幅（目安） ") + interval(p).map(v => fmt(v)).join(" ～ ") + " m/s";
 }
 function drawPlot() {
     const axis = fields.find(field => field.key === $("plot-axis").querySelector('[aria-pressed="true"]').dataset.axis);
@@ -8837,11 +8915,15 @@ function renderRows() {
 function setMeasurements(rows) {
     // Fit before changing the accepted dataset, so a failed import preserves both the
     // current model and the rows that produced it.
+    const base = gpSimModel || FanML.train(simulationTrainingRows());
     const model = rows.length ? FanML.train(rows, {measured: true}) : null;
+    const correction = rows.length ? FanML.train(FanHybrid.residualRows(rows,base), {measured:true,residual:true}) : null;
     measuredRows = rows;
     fittedRows = rows;
+    gpSimModel = base;
     gpMeasuredModel = model;
-    deepMeasuredModel = null;
+    gpCorrectionModel = correction;
+    invalidateDeepMeasurements();
     stopDeepTraining();
     activateModels();
     if (learningMethod === "deep") trainDeepModels();
@@ -8931,13 +9013,23 @@ for (const button of $("learning-method").querySelectorAll("button")) {
 }
 $("training-size").onchange = () => {
     stopDeepTraining();
-    gpSimModel = null;
+    gpSimModel = gpCorrectionModel = null;
     deepSimModel = null;
+    invalidateDeepMeasurements();
     trainingDesigns = simulationTrainingRows();
     if (learningMethod === "gp") prepareSimModel();
     activateModels();
     if (learningMethod === "deep") trainDeepModels();
 };
+for (const button of $("prediction-source").querySelectorAll("button")) {
+    button.onclick = () => {
+        stopDeepTraining();
+        dataSource = button.dataset.source;
+        for (const item of $("prediction-source").querySelectorAll("button")) item.setAttribute("aria-pressed",String(item === button));
+        if (learningMethod === "gp") prepareSimModel();
+        else { activateModels(); trainDeepModels(); }
+    };
+}
 for (const button of $("plot-axis").querySelectorAll("button")) {
     button.onclick = () => {
         for (const choice of $("plot-axis").querySelectorAll("button")) {
@@ -8963,11 +9055,10 @@ try {
             try { valid.push(FanML.validateRow(row)); }
             catch { skipped++; }
         }
-        const model = valid.length ? FanML.train(valid, {measured:true}) : null;
+        // Validate the grouped design limit before accepting stored measurements.
+        if (valid.length) FanML.train(valid,{measured:true});
         measuredRows = valid;
         fittedRows = valid;
-        gpMeasuredModel = model;
-        measuredModel = model;
         if (skipped) $("data-error").textContent = "以前の入力のうち " + skipped + " 件は空欄または範囲外のため学習に使っていません。";
     }
 } catch (error) {
