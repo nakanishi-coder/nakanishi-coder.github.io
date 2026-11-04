@@ -432,7 +432,8 @@ td button {
 .learning-settings select,.learning-settings input { padding:7px; border:1px solid var(--line); border-radius:5px; color:var(--ink); background:var(--surface); font:inherit; }
 #deep-epochs { width:84px; }
 
-.stl-export { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
+.stl-export { display:grid; gap:10px; }
+.stl-export .primary { width:100%; }
 .stl-export small { color:var(--muted); font-size:12px; }
 #stl-error { color:#9c381b; font-size:14px; white-space:pre-line; }
 #stl-status:empty,#stl-error:empty { display:none; }
@@ -445,6 +446,7 @@ td button {
 <nav aria-label="実験モード"><button id="sim-tab" aria-pressed="true"><b>シミュレーション</b></button><button id="ml-tab" aria-pressed="false"><b>AI予測</b></button></nav>
 <div class="workspace">
 <div class="design-column"><aside class="card controls"><div class="design-heading"><h2>羽根の設計</h2><button id="reset" class="quiet">初期値に戻す</button></div><div id="controls"></div></aside>
+<section id="stl-entry" class="card stl-export-panel" aria-label="STL出力"><div class="stl-export"><button class="primary" id="export-stl">STLをダウンロード</button><small>羽根とハブを出力（mm）</small></div><p id="stl-status" class="note" role="status"></p><p id="stl-error" role="alert"></p></section>
 <section id="measurement-entry" class="card measurement-entry" aria-label="実測風速の入力" hidden>
 <label for="measured-speed">実測した風速（m/s）</label>
 <input id="measured-speed" type="number" inputmode="decimal" min="0" step="any" placeholder="例 1.8">
@@ -455,7 +457,7 @@ td button {
 <section id="simulation" class="card model"><div class="panel-head"><h2>羽根のプレビュー</h2><span class="chip">3Dモデル</span></div>
 <div id="drawing"><canvas id="rotor-canvas" tabindex="0" aria-label="羽根とハブの3Dモデル" aria-describedby="view-help"></canvas></div>
 <div class="view-tools"><small id="view-help">ドラッグまたは矢印キーで回転</small><div><button id="view-front">正面</button><button id="view-reset">初期視点</button><button id="view-out" aria-label="縮小">−</button><button id="view-in" aria-label="拡大">＋</button></div></div><div class="readout"><div><h3>測定位置での計算風速</h3><p>前面ガード外面から正面の軸上50 mm</p></div><div class="metric"><output id="velocity">…</output><span> m/s</span></div></div><p id="physics-note" role="status" class="note"></p>
-<div class="stl-export"><button class="primary" id="export-stl">STLをダウンロード</button><small>羽根とハブを出力（mm）</small></div><p id="stl-status" class="note" role="status"></p><p id="stl-error" role="alert"></p></section>
+</section>
 <section id="learning" class="card learning" hidden><h2>風速を予測する</h2>
 <div id="learning-method" class="method-buttons" role="group" aria-label="学習方法"><button data-method="gp" aria-pressed="true">ガウス過程回帰</button><button data-method="deep" aria-pressed="false">Deep Learning</button></div>
 <input id="training-size" type="hidden" value="100">
@@ -8544,7 +8546,7 @@ function refreshDesign() {
 }
 function switchMode(next) {
     mode = next;
-    $("simulation").hidden = next !== "simulation";
+    $("simulation").hidden = $("stl-entry").hidden = next !== "simulation";
     $("learning").hidden = $("measurements").hidden = $("measurement-entry").hidden = next !== "learning";
     $("sim-tab").setAttribute("aria-pressed", String(next === "simulation"));
     $("ml-tab").setAttribute("aria-pressed", String(next === "learning"));
