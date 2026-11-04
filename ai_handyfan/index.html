@@ -438,7 +438,18 @@ td button {
 #stl-error { color:#9c381b; font-size:14px; white-space:pre-line; }
 #stl-status:empty,#stl-error:empty { display:none; }
 
-.source-buttons { margin-top: -4px; }
+
+.source-selector { display:flex; align-items:center; justify-content:center; gap:12px; margin:-4px 0 16px; padding:2px 12px; border-radius:7px; background:#f2f6f0; font-size:14px; color:var(--muted); }
+.source-selector>span { white-space:nowrap; }
+.source-selector[data-source="hybrid"] #source-hybrid,.source-selector[data-source="measured"] #source-only { color:var(--teal); font-weight:700; }
+.source-switch { position:relative; display:grid; place-items:center; flex:0 0 60px; height:44px; }
+.source-switch input { position:absolute; inset:0; z-index:1; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+.source-switch-track { position:relative; width:52px; height:28px; border-radius:20px; background:#9aafa5; transition:background .18s; }
+.source-switch-track::before { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:white; box-shadow:0 1px 3px #183c3840; transition:transform .18s; }
+.source-switch input:checked + .source-switch-track { background:var(--teal); }
+.source-switch input:checked + .source-switch-track::before { transform:translateX(24px); }
+.source-switch input:focus-visible + .source-switch-track { outline:3px solid #ca832c; outline-offset:3px; }
+@media(prefers-reduced-motion:reduce) { .source-switch-track,.source-switch-track::before { transition:none; } }
 
 </style>
 </head>
@@ -462,7 +473,7 @@ td button {
 </section>
 <section id="learning" class="card learning" hidden><h2>風速を予測する</h2>
 <div id="learning-method" class="method-buttons" role="group" aria-label="学習方法"><button data-method="gp" aria-pressed="true">ガウス過程回帰</button><button data-method="deep" aria-pressed="false">Deep Learning</button></div>
-<div id="prediction-source" class="method-buttons source-buttons" role="group" aria-label="実測データの利用方法"><button data-source="hybrid" aria-pressed="true">計算＋実測</button><button data-source="measured" aria-pressed="false">実測のみ</button></div>
+<div id="prediction-source" class="source-selector" data-source="hybrid" role="group" aria-label="実測データの利用方法"><span id="source-only">実測のみ</span><label class="source-switch"><input id="prediction-source-switch" type="checkbox" role="switch" aria-label="計算データを併用" checked><span class="source-switch-track" aria-hidden="true"></span></label><span id="source-hybrid">計算＋実測</span></div>
 <input id="training-size" type="hidden" value="100">
 <input id="deep-epochs" type="hidden" value="400">
 <div class="predictions"><div><span class="legend-dot"></span>計算データで学習<strong id="gp-sim">—</strong><small id="int-sim"></small></div><div><span class="legend-dot gold"></span><span id="prediction-label">計算＋実測で補正</span><strong id="gp-real">—</strong><small id="int-real">設計欄の下から実測値を追加してください。</small></div></div>
@@ -9021,15 +9032,13 @@ $("training-size").onchange = () => {
     activateModels();
     if (learningMethod === "deep") trainDeepModels();
 };
-for (const button of $("prediction-source").querySelectorAll("button")) {
-    button.onclick = () => {
-        stopDeepTraining();
-        dataSource = button.dataset.source;
-        for (const item of $("prediction-source").querySelectorAll("button")) item.setAttribute("aria-pressed",String(item === button));
-        if (learningMethod === "gp") prepareSimModel();
-        else { activateModels(); trainDeepModels(); }
-    };
-}
+$("prediction-source-switch").onchange = () => {
+    stopDeepTraining();
+    dataSource = $("prediction-source-switch").checked ? "hybrid" : "measured";
+    $("prediction-source").dataset.source = dataSource;
+    if (learningMethod === "gp") prepareSimModel();
+    else { activateModels(); trainDeepModels(); }
+};
 for (const button of $("plot-axis").querySelectorAll("button")) {
     button.onclick = () => {
         for (const choice of $("plot-axis").querySelectorAll("button")) {
