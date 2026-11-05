@@ -4539,9 +4539,7 @@ function createRotorView(canvas) {
             world[i + 2] = mesh.positions[i + 2] + positionMm[2];
         }
         return {world, projected: new Float32Array(world.length), indices: mesh.indices,
-            // UTokyo Symbol Mark colors: Blue #0B8BEE / Yellow #FFCD00.
-            // https://www.u-tokyo.ac.jp/content/400236233.pdf
-            color: material === "hub" ? [11, 139, 238] : [255, 205, 0]};
+            color: material === "hub" ? [47, 107, 91] : [218, 160, 79]};
     }
 
     function paint() {
