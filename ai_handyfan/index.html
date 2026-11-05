@@ -42,7 +42,7 @@ h3 { font-size:18px; }
 .prediction-summary { background:var(--design-surface); }
 .prediction-summary h2 { font-size:32px; line-height:1.25; margin:0; }
 .prediction-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
-#learning-method { display:flex; gap:6px; margin-left:auto; }
+#learning-method { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; margin-left:auto; }
 #learning-method button { font-size:13px; min-height:38px; padding:8px 10px; white-space:nowrap; }
 #learning-method button[aria-pressed="true"],#reset { background:var(--teal); border-color:var(--teal); color:white; }
 #learning-method button[aria-pressed="true"]:hover,#reset:hover { background:#075448; color:white; }
@@ -237,7 +237,7 @@ td:last-child { text-align:right; }
 <div id="drawing"><canvas id="rotor-canvas" tabindex="0" aria-label="羽根とハブの3Dモデル" aria-describedby="view-help"></canvas></div>
 <div class="view-tools"><small id="view-help">ドラッグまたは矢印キーで回転</small><div><button id="view-front">正面</button><button id="view-reset">初期視点</button><button id="view-out" aria-label="縮小">−</button><button id="view-in" aria-label="拡大">＋</button></div></div>
 </section>
-<section id="learning" class="learning" hidden><div class="prediction-summary" aria-labelledby="prediction-heading"><div class="prediction-heading"><h2 id="prediction-heading">風速を予測する</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button></div></div>
+<section id="learning" class="learning" hidden><div class="prediction-summary" aria-labelledby="prediction-heading"><div class="prediction-heading"><h2 id="prediction-heading">風速を予測する</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button><button type="button" data-method="ridge" aria-pressed="false" title="二次回帰＋リッジ正則化">二次回帰</button></div></div>
 <input id="training-size" type="hidden" value="100"><input id="deep-epochs" type="hidden" value="400">
 <div class="predictions"><div><span class="legend-dot"></span>計算データで学習<div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim" class="sr-only"></small></div></div><div><span class="legend-dot gold"></span><span id="prediction-label">計算＋実測データで補正</span><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><span class="legend-dot measured-only"></span>実測データで学習<div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
 </div>
@@ -856,6 +856,89 @@ globalThis.FanDeepPretrained = {"version":1,"sourceDigest":"752b39b139cfda1dd318
         };
     }
     globalThis.FanHybrid=Object.freeze({residualRows,combine});
+})();
+
+</script>
+<script>
+(() => {
+    "use strict";
+
+    const penalty = 0.01;
+
+    function features({width, pitch, count}) {
+        const values = [width, pitch, count];
+        const [x, y, z] = ["width", "pitch", "count"].map((key, i) => {
+            const {min, max} = FanRanges[key];
+            return 2 * (values[i] - min) / (max - min) - 1;
+        });
+        return [1, x, y, z, x*x, y*y, z*z, x*y, x*z, y*z];
+    }
+
+    function forward(lower, rhs) {
+        const solution = Float64Array.from(rhs);
+        for (let i = 0; i < solution.length; i++) {
+            for (let j = 0; j < i; j++) solution[i] -= lower[i][j] * solution[j];
+            solution[i] /= lower[i][i];
+        }
+        return solution;
+    }
+
+    function train(rows, {measured = false, residual = false} = {}) {
+        if (!Array.isArray(rows) || !rows.length || rows.length > 5000)
+            throw Error("学習データは1～5000件で指定してください。");
+        const data = rows.map(residual ? FanML.validateResidual : FanML.validateRow);
+        const designs = new Set(data.map(row => [row.width, row.pitch, row.count].join("/")));
+        if (designs.size > 300) throw Error("異なる設計は300通りまでです。");
+        // With one or two distinct measured designs, estimate just a shared level.
+        const basis = measured && designs.size < 3 ? () => [1] : features;
+        const size = basis(data[0]).length;
+        const unit = data.reduce((max, row) => Math.max(max, Math.abs(row.speed)), 1);
+        const lower = Array.from({length:size}, (_, i) => new Float64Array(i + 1));
+        const rhs = new Float64Array(size);
+
+        for (const row of data) {
+            const x = basis(row), target = row.speed / unit;
+            for (let i = 0; i < size; i++) {
+                rhs[i] += x[i] * target;
+                for (let j = 0; j <= i; j++) lower[i][j] += x[i] * x[j];
+            }
+        }
+        // Ridge for mean squared loss. The intercept is left unpenalized.
+        for (let i = 1; i < size; i++) lower[i][i] += penalty * data.length;
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j <= i; j++) {
+                let value = lower[i][j];
+                for (let k = 0; k < j; k++) value -= lower[i][k] * lower[j][k];
+                lower[i][j] = i === j ? Math.sqrt(value) : value / lower[j][j];
+            }
+        }
+        const coefficients = forward(lower, rhs);
+        for (let i = size - 1; i >= 0; i--) {
+            for (let j = i + 1; j < size; j++) coefficients[i] -= lower[j][i] * coefficients[j];
+            coefficients[i] /= lower[i][i];
+        }
+        const estimate = x => x.reduce((sum, value, i) => sum + value * coefficients[i], 0);
+        const rmse = Math.sqrt(data.reduce((sum, row) => {
+            return sum + (row.speed / unit - estimate(basis(row))) ** 2;
+        }, 0) / data.length);
+        const noise = Math.max(rmse, measured ? 0.10 / unit : 0);
+
+        return {
+            predict(width, pitch, count) {
+                const row = FanML.validateRow({width, pitch, count, speed:0});
+                const x = basis(row);
+                const leverage = forward(lower, x).reduce((sum, value) => sum + value*value, 0);
+                const mean = estimate(x) * unit;
+                // Approximate width from residual scale and the ridge precision.
+                const sd = noise * Math.sqrt(1 + leverage) * unit;
+                if (!Number.isFinite(mean) || !Number.isFinite(sd))
+                    throw Error("予測値が計算可能な範囲を超えました。風速の単位を確認してください。");
+                return {mean, sd};
+            }
+        };
+    }
+
+    globalThis.FanRidge = Object.freeze({train});
 })();
 
 </script>
@@ -8375,7 +8458,8 @@ const fields = [
 ];
 const design = Object.fromEntries(fields.map(f => [f.key, f.initial]));
 let measuredRows = [], measuredModel = null, combinedModel = null, simModel = null, mode = "simulation";
-let fittedRows = [];
+let fittedRows = [], measuredOnlyModel = null;
+let ridgeModels = null;
 let trainingDesigns = [];
 let learningMethod = "gp", gpSimModel = null, gpMeasuredModel = null;
 let deepSimModel = null, deepMeasuredModel = null, deepEpochs = 400, deepBaseSignature = "";
@@ -8417,6 +8501,7 @@ function switchMode(next) {
     $("ml-tab").setAttribute("aria-pressed", String(next === "learning"));
     if (next === "learning") {
         if (learningMethod === "gp") prepareSimModel();
+        else if (learningMethod === "ridge") prepareRidgeModels();
         else if (!deepSimModel && !deepBusy) trainDeepModels();
     }
     refreshDesign();
@@ -8528,6 +8613,25 @@ function prepareSimModel() {
         $("sim-error").hidden = false;
     }
 }
+function fitRidgeMeasurements(rows, baseline) {
+    if (!rows.length) return {measured:null, correction:null};
+    return {
+        measured: FanRidge.train(rows, {measured:true}),
+        correction: FanRidge.train(FanHybrid.residualRows(rows, baseline), {measured:true, residual:true})
+    };
+}
+function prepareRidgeModels() {
+    try {
+        trainingDesigns = simulationTrainingRows();
+        const baseline = ridgeModels?.baseline ?? FanRidge.train(trainingDesigns);
+        if (!ridgeModels?.measured)
+            ridgeModels = {baseline, ...fitRidgeMeasurements(measuredRows, baseline)};
+        activateModels();
+    } catch (error) {
+        $("sim-error").textContent = "二次回帰で予測できません。" + error.message;
+        $("sim-error").hidden = false;
+    }
+}
 function activateModels() {
     for (const button of $("learning-method").querySelectorAll("button"))
         button.setAttribute("aria-pressed", String(button.dataset.method === learningMethod));
@@ -8537,11 +8641,22 @@ function activateModels() {
         $("prediction-source-message").hidden = true;
         $("prediction-source-switch").removeAttribute("aria-describedby");
     } else $("prediction-source-switch").setAttribute("aria-describedby","prediction-source-message");
-    simModel = learningMethod === "gp" ? gpSimModel : deepSimModel;
-    const correction = learningMethod === "gp" ? gpCorrectionModel : deepCorrectionModel;
+    let correction;
+    if (learningMethod === "ridge") {
+        simModel = ridgeModels.baseline;
+        measuredOnlyModel = ridgeModels.measured;
+        correction = ridgeModels.correction;
+    } else if (learningMethod === "gp") {
+        simModel = gpSimModel;
+        measuredOnlyModel = gpMeasuredModel;
+        correction = gpCorrectionModel;
+    } else {
+        simModel = deepSimModel;
+        measuredOnlyModel = deepMeasuredModel;
+        correction = deepCorrectionModel;
+    }
     combinedModel = simModel && correction ? FanHybrid.combine(simModel,correction) : null;
-    measuredModel = dataSource === "hybrid" ? combinedModel
-        : (learningMethod === "gp" ? gpMeasuredModel : deepMeasuredModel);
+    measuredModel = dataSource === "hybrid" ? combinedModel : measuredOnlyModel;
     document.querySelector(".plot-panel").dataset.source = dataSource;
     $("plot-real-label").textContent = dataSource === "hybrid" ? "計算＋実測データで補正" : "実測データで学習";
     for (const id of ["plot-real-key","plot-band-key","plot-measure-key"]) $(id).hidden = !measuredModel;
@@ -8700,7 +8815,7 @@ function renderLearning() {
     if (outside) $("sim-error").textContent = "選択中のピッチ角は計算データの学習範囲外です。計算データからの予測は外挿です。";
     showPrediction(simModel, "gp-sim", "int-sim");
     showPrediction(combinedModel, "gp-real", "int-real", true);
-    showPrediction(learningMethod === "gp" ? gpMeasuredModel : deepMeasuredModel, "gp-measured", "int-measured");
+    showPrediction(measuredOnlyModel, "gp-measured", "int-measured");
     drawPlot();
 }
 function persist() {
@@ -8747,6 +8862,12 @@ function setMeasurements(rows) {
     const base = gpSimModel || FanML.train(simulationTrainingRows());
     const model = rows.length ? FanML.train(rows, {measured: true}) : null;
     const correction = rows.length ? FanML.train(FanHybrid.residualRows(rows,base), {measured:true,residual:true}) : null;
+    if (ridgeModels) {
+        const updates = learningMethod === "ridge"
+            ? fitRidgeMeasurements(rows, ridgeModels.baseline)
+            : {measured:null, correction:null};
+        ridgeModels = {...ridgeModels, ...updates};
+    }
     measuredRows = rows;
     fittedRows = rows;
     gpSimModel = base;
@@ -8833,12 +8954,13 @@ $("export-stl").onclick = async () => {
 $("training-size").onchange = () => {
     stopDeepTraining();
     gpSimModel = gpCorrectionModel = null;
+    ridgeModels = null;
     deepSimModel = null;
     invalidateDeepMeasurements();
     trainingDesigns = simulationTrainingRows();
     if (learningMethod === "gp") prepareSimModel();
-    activateModels();
-    if (learningMethod === "deep") trainDeepModels();
+    else if (learningMethod === "ridge") prepareRidgeModels();
+    else trainDeepModels();
 };
 for (const button of $("learning-method").querySelectorAll("button")) {
     button.onclick = () => {
@@ -8847,6 +8969,7 @@ for (const button of $("learning-method").querySelectorAll("button")) {
         stopDeepTraining();
         learningMethod = next;
         if (next === "gp") prepareSimModel();
+        else if (next === "ridge") prepareRidgeModels();
         else { activateModels(); trainDeepModels(); }
     };
 }
