@@ -40,7 +40,12 @@ h3 { font-size:18px; }
 .learning { display:grid; gap:18px; }
 .prediction-summary,.plot-panel,.controls,.data-card { border:1px solid var(--line); border-radius:10px; padding:18px; }
 .prediction-summary { background:var(--design-surface); }
-.prediction-summary h2 { font-size:32px; line-height:1.25; margin-bottom:14px; }
+.prediction-summary h2 { font-size:32px; line-height:1.25; margin:0; }
+.prediction-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+#learning-method { display:flex; gap:6px; margin-left:auto; }
+#learning-method button { font-size:13px; min-height:38px; padding:8px 10px; white-space:nowrap; }
+#learning-method button[aria-pressed="true"],#reset { background:var(--teal); border-color:var(--teal); color:white; }
+#learning-method button[aria-pressed="true"]:hover,#reset:hover { background:#075448; color:white; }
 .plot-panel { background:#fff; min-width:0; }
 .plot-panel,.data-card { border:2px solid #9ab0a4; }
 .design-column { grid-column:2; grid-row:1; display:grid; gap:18px; }
@@ -81,7 +86,6 @@ input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--teal); cur
 .legend-dot,.legend-line { display:inline-block; width:42px; height:0; border-top:3px dashed var(--teal); vertical-align:middle; margin-right:10px; }
 .legend-dot.gold,.legend-line.measured { border-top-style:solid; border-color:var(--gold); }
 .plot-source-row { display:flex; align-items:center; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin:-6px 0 10px; }
-.learning-method-label { margin:0; color:var(--muted); font-size:14px; }
 .source-selector { display:flex; align-items:center; justify-content:center; gap:12px; font-size:14px; color:var(--muted); }
 .source-selector>span { white-space:nowrap; }
 .source-selector[data-source="hybrid"] #source-hybrid,.source-selector[data-source="measured"] #source-only { color:var(--teal); font-weight:700; }
@@ -91,6 +95,9 @@ input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--teal); cur
 .source-switch-track::before { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:white; box-shadow:0 1px 3px #183c3840; transition:transform .18s; }
 .source-switch input:checked + .source-switch-track { background:var(--teal); }
 .source-switch input:checked + .source-switch-track::before { transform:translateX(24px); }
+.source-selector[data-available="false"]>span { color:var(--muted)!important; font-weight:400!important; }
+.source-switch input[aria-disabled="true"] + .source-switch-track { background:#9aafa5; transition:none; }
+.source-message { margin:0 0 14px; color:#75500e; font-size:14px; line-height:1.6; }
 .source-switch input:focus-visible + .source-switch-track { outline:3px solid #ca832c; outline-offset:3px; }
 .plot-head { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
 .plot-source-row h3 { font-size:23px; }
@@ -171,7 +178,7 @@ td:last-child { text-align:right; }
   nav b { font-size:15px; }
   .prediction-summary,.plot-panel,.controls,.data-card { padding:12px; }
   .learning { gap:14px; }
-  .prediction-summary h2 { font-size:26px; margin-bottom:14px; }
+  .prediction-summary h2 { font-size:26px; }
   .predictions { grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
   .predictions>div { padding:12px; font-size:12px; }
   .predictions>div:first-child { grid-column:1/-1; }
@@ -180,7 +187,6 @@ td:last-child { text-align:right; }
   .prediction-value { gap:6px; margin-top:6px; }
   .legend-dot { width:23px; margin-right:6px; border-top-width:2px; }
   .plot-source-row { margin:-6px 0 8px; }
-  .learning-method-label { font-size:12px; }
   .source-selector { gap:6px; font-size:12px; }
   .source-switch { flex-basis:56px; }
   .plot-head { gap:10px; margin-bottom:12px; }
@@ -231,11 +237,12 @@ td:last-child { text-align:right; }
 <div id="drawing"><canvas id="rotor-canvas" tabindex="0" aria-label="羽根とハブの3Dモデル" aria-describedby="view-help"></canvas></div>
 <div class="view-tools"><small id="view-help">ドラッグまたは矢印キーで回転</small><div><button id="view-front">正面</button><button id="view-reset">初期視点</button><button id="view-out" aria-label="縮小">−</button><button id="view-in" aria-label="拡大">＋</button></div></div>
 </section>
-<section id="learning" class="learning" hidden><div class="prediction-summary" aria-labelledby="prediction-heading"><h2 id="prediction-heading">風速を予測する</h2>
+<section id="learning" class="learning" hidden><div class="prediction-summary" aria-labelledby="prediction-heading"><div class="prediction-heading"><h2 id="prediction-heading">風速を予測する</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button></div></div>
 <input id="training-size" type="hidden" value="100"><input id="deep-epochs" type="hidden" value="400">
 <div class="predictions"><div><span class="legend-dot"></span>計算データで学習<div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim" class="sr-only"></small></div></div><div><span class="legend-dot gold"></span><span id="prediction-label">計算＋実測データで補正</span><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><span class="legend-dot measured-only"></span>実測データで学習<div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
-<p class="learning-method-label">ガウス過程回帰</p></div>
-<section class="plot-panel" aria-labelledby="plot-title"><div class="plot-source-row"><h3 id="plot-title">羽根の先端幅と予測風速</h3><div id="prediction-source" class="source-selector" data-source="hybrid" role="group" aria-label="実測データの利用方法"><span id="source-only">実測のみ</span><label class="source-switch"><input id="prediction-source-switch" type="checkbox" role="switch" aria-label="計算データを併用" checked><span class="source-switch-track" aria-hidden="true"></span></label><span id="source-hybrid">計算＋実測</span></div></div>
+</div>
+<section class="plot-panel" aria-labelledby="plot-title"><div class="plot-source-row"><h3 id="plot-title">羽根の先端幅と予測風速</h3><div id="prediction-source" class="source-selector" data-source="hybrid" role="group" aria-label="実測データの利用方法"><span id="source-only">実測のみ</span><label class="source-switch"><input id="prediction-source-switch" type="checkbox" role="switch" aria-label="計算データを併用" aria-disabled="true" aria-describedby="prediction-source-message" checked><span class="source-switch-track" aria-hidden="true"></span></label><span id="source-hybrid">計算＋実測</span></div></div>
+<p id="prediction-source-message" class="source-message" role="alert" hidden>実測した風速を入力し、「実測値で学習する」のボタンを押してください。</p>
 <div class="plot-head"><div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div><small id="plot-context"></small></div>
 <div class="plot-legend" aria-label="グラフの凡例"><span><i class="legend-line"></i>計算データで学習</span><span id="plot-real-key" hidden><i class="legend-line measured"></i><span id="plot-real-label">計算＋実測データで補正</span></span><span id="plot-band-key" hidden><i class="legend-band"></i>予測の幅（目安）</span><span id="plot-measure-key" hidden><i class="legend-measure"></i>実測値</span></div>
 <div id="plot"></div></section><p class="note" id="sim-error" role="alert" hidden></p></section>
@@ -4532,7 +4539,9 @@ function createRotorView(canvas) {
             world[i + 2] = mesh.positions[i + 2] + positionMm[2];
         }
         return {world, projected: new Float32Array(world.length), indices: mesh.indices,
-            color: material === "hub" ? [47, 107, 91] : [218, 160, 79]};
+            // UTokyo Symbol Mark colors: Blue #0B8BEE / Yellow #FFCD00.
+            // https://www.u-tokyo.ac.jp/content/400236233.pdf
+            color: material === "hub" ? [11, 139, 238] : [255, 205, 0]};
     }
 
     function paint() {
@@ -8494,6 +8503,14 @@ function prepareSimModel() {
     }
 }
 function activateModels() {
+    for (const button of $("learning-method").querySelectorAll("button"))
+        button.setAttribute("aria-pressed", String(button.dataset.method === learningMethod));
+    $("prediction-source-switch").setAttribute("aria-disabled",String(!measuredRows.length));
+    $("prediction-source").dataset.available = String(Boolean(measuredRows.length));
+    if (measuredRows.length) {
+        $("prediction-source-message").hidden = true;
+        $("prediction-source-switch").removeAttribute("aria-describedby");
+    } else $("prediction-source-switch").setAttribute("aria-describedby","prediction-source-message");
     simModel = learningMethod === "gp" ? gpSimModel : deepSimModel;
     const correction = learningMethod === "gp" ? gpCorrectionModel : deepCorrectionModel;
     combinedModel = simModel && correction ? FanHybrid.combine(simModel,correction) : null;
@@ -8557,7 +8574,6 @@ async function trainDeepModels() {
     }
     deepEpochs = epochs;
     const token = deepJob, rows = measuredRows.map(row => ({...row}));
-    const kind = dataSource === "hybrid" ? "correction" : "measured";
     trainingDesigns = simulationTrainingRows();
     if (!deepSimModel) deepSimModel = restoreDeepModel("sim",trainingDesigns,epochs);
     deepBusy = true;
@@ -8580,7 +8596,7 @@ async function trainDeepModels() {
             saveDeepModel("sim",trainingDesigns,epochs,model);
             activateModels();
         }
-        if (rows.length) {
+        for (const kind of rows.length ? ["correction","measured"] : []) {
             let model = kind === "correction" ? deepCorrectionModel : deepMeasuredModel;
             if (!model) model = restoreDeepModel(kind,rows,epochs);
             if (!model) {
@@ -8591,6 +8607,7 @@ async function trainDeepModels() {
             }
             if (kind === "correction") deepCorrectionModel = model;
             else deepMeasuredModel = model;
+            activateModels();
         }
         if (token !== deepJob) return;
         activateModels();
@@ -8607,7 +8624,7 @@ function interval(p) { return [p.mean - 1.96 * p.sd, p.mean + 1.96 * p.sd]; }
 function showPrediction(model, id, intervalId, hybrid = false) {
     if (!model) {
         $(id).textContent = "—";
-        $(intervalId).textContent = id !== "gp-sim" ? "実測値を追加してください。" : "";
+        $(intervalId).textContent = id !== "gp-sim" && !measuredRows.length ? "実測値を追加してください。" : "";
         return;
     }
     const p = model.predict(design.width, design.pitch, design.count);
@@ -8807,12 +8824,32 @@ $("training-size").onchange = () => {
     activateModels();
     if (learningMethod === "deep") trainDeepModels();
 };
+for (const button of $("learning-method").querySelectorAll("button")) {
+    button.onclick = () => {
+        const next = button.dataset.method;
+        if (learningMethod === next) return;
+        stopDeepTraining();
+        learningMethod = next;
+        if (next === "gp") prepareSimModel();
+        else { activateModels(); trainDeepModels(); }
+    };
+}
+$("prediction-source").onclick = event => {
+    if (!measuredRows.length) {
+        event.preventDefault();
+        $("prediction-source-message").hidden = false;
+    }
+};
 $("prediction-source-switch").onchange = () => {
-    stopDeepTraining();
+    if (!measuredRows.length) {
+        $("prediction-source-switch").checked = dataSource === "hybrid";
+        $("prediction-source-message").hidden = false;
+        return;
+    }
     dataSource = $("prediction-source-switch").checked ? "hybrid" : "measured";
     $("prediction-source").dataset.source = dataSource;
     if (learningMethod === "gp") prepareSimModel();
-    else { activateModels(); trainDeepModels(); }
+    else activateModels();
 };
 for (const button of $("plot-axis").querySelectorAll("button")) {
     button.onclick = () => {
