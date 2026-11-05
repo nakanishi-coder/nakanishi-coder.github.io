@@ -41,7 +41,8 @@ h3 { font-size:18px; }
 .prediction-summary,.plot-panel,.controls,.data-card { border:1px solid var(--line); border-radius:10px; padding:18px; }
 .prediction-summary { background:var(--design-surface); }
 .prediction-summary h2 { font-size:32px; line-height:1.25; margin-bottom:14px; }
-.plot-panel { background:var(--design-surface); min-width:0; }
+.plot-panel { background:#fff; min-width:0; }
+.plot-panel,.data-card { border:2px solid #9ab0a4; }
 .design-column { grid-column:2; grid-row:1; display:grid; gap:18px; }
 .controls { background:var(--design-surface); box-shadow:none; }
 .design-heading,.panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -79,7 +80,7 @@ input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--teal); cur
 .predictions small { max-width:220px; font-size:13px; line-height:1.5; font-weight:400; }
 .legend-dot,.legend-line { display:inline-block; width:42px; height:0; border-top:3px dashed var(--teal); vertical-align:middle; margin-right:10px; }
 .legend-dot.gold,.legend-line.measured { border-top-style:solid; border-color:var(--gold); }
-.plot-source-row { display:flex; justify-content:flex-end; margin:-6px 0 10px; }
+.plot-source-row { display:flex; align-items:center; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin:-6px 0 10px; }
 .learning-method-label { margin:0; color:var(--muted); font-size:14px; }
 .source-selector { display:flex; align-items:center; justify-content:center; gap:12px; font-size:14px; color:var(--muted); }
 .source-selector>span { white-space:nowrap; }
@@ -92,7 +93,7 @@ input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--teal); cur
 .source-switch input:checked + .source-switch-track::before { transform:translateX(24px); }
 .source-switch input:focus-visible + .source-switch-track { outline:3px solid #ca832c; outline-offset:3px; }
 .plot-head { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
-.plot-head h3 { font-size:23px; }
+.plot-source-row h3 { font-size:23px; }
 .plot-head small { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
 .plot-controls { display:flex; gap:5px; flex:1; min-width:310px; }
 .plot-controls button { flex:1; padding:8px 5px; min-height:36px; font-size:13px; white-space:nowrap; }
@@ -122,7 +123,7 @@ svg { display:block; width:100%; height:auto; }
 .metric output { font:600 50px system-ui; font-variant-numeric:tabular-nums; }
 .metric span { font-size:14px; }
 .note { margin:8px 0 0; color:var(--muted); font-size:13px; line-height:1.7; }
-.data-card { margin-top:18px; background:var(--design-surface); }
+.data-card { margin-top:18px; background:#fff; }
 .data-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
 .data-title { display:flex; align-items:center; gap:12px; }
 .data-title h2 { font-size:24px; }
@@ -183,7 +184,7 @@ td:last-child { text-align:right; }
   .source-selector { gap:6px; font-size:12px; }
   .source-switch { flex-basis:56px; }
   .plot-head { gap:10px; margin-bottom:12px; }
-  .plot-head h3 { font-size:18px; }
+  .plot-source-row h3 { font-size:18px; }
   .plot-controls { order:1; flex-basis:100%; min-width:0; }
   .plot-controls button { padding:8px 3px; font-size:12px; }
   .plot-head small { margin-left:0; font-size:12px; }
@@ -234,8 +235,8 @@ td:last-child { text-align:right; }
 <input id="training-size" type="hidden" value="100"><input id="deep-epochs" type="hidden" value="400">
 <div class="predictions"><div><span class="legend-dot"></span>計算データで学習<div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim" class="sr-only"></small></div></div><div><span class="legend-dot gold"></span><span id="prediction-label">計算＋実測データで補正</span><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><span class="legend-dot measured-only"></span>実測データで学習<div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
 <p class="learning-method-label">ガウス過程回帰</p></div>
-<section class="plot-panel" aria-labelledby="plot-title"><div class="plot-source-row"><div id="prediction-source" class="source-selector" data-source="hybrid" role="group" aria-label="実測データの利用方法"><span id="source-only">実測のみ</span><label class="source-switch"><input id="prediction-source-switch" type="checkbox" role="switch" aria-label="計算データを併用" checked><span class="source-switch-track" aria-hidden="true"></span></label><span id="source-hybrid">計算＋実測</span></div></div>
-<div class="plot-head"><h3 id="plot-title">羽根の先端幅と予測風速</h3><div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div><small id="plot-context"></small></div>
+<section class="plot-panel" aria-labelledby="plot-title"><div class="plot-source-row"><h3 id="plot-title">羽根の先端幅と予測風速</h3><div id="prediction-source" class="source-selector" data-source="hybrid" role="group" aria-label="実測データの利用方法"><span id="source-only">実測のみ</span><label class="source-switch"><input id="prediction-source-switch" type="checkbox" role="switch" aria-label="計算データを併用" checked><span class="source-switch-track" aria-hidden="true"></span></label><span id="source-hybrid">計算＋実測</span></div></div>
+<div class="plot-head"><div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div><small id="plot-context"></small></div>
 <div class="plot-legend" aria-label="グラフの凡例"><span><i class="legend-line"></i>計算データで学習</span><span id="plot-real-key" hidden><i class="legend-line measured"></i><span id="plot-real-label">計算＋実測データで補正</span></span><span id="plot-band-key" hidden><i class="legend-band"></i>予測の幅（目安）</span><span id="plot-measure-key" hidden><i class="legend-measure"></i>実測値</span></div>
 <div id="plot"></div></section><p class="note" id="sim-error" role="alert" hidden></p></section>
 <div class="design-column"><aside class="card controls"><div class="design-heading"><h2>羽根の設計</h2><button id="reset" class="quiet">初期値に戻す</button></div><div id="controls"></div></aside>
