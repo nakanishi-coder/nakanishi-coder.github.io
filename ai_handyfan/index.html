@@ -49,6 +49,7 @@ nav button[aria-pressed=true] b { font-weight:700; }
 nav button[aria-pressed=true],nav button[aria-pressed=true]:hover { background:var(--teal); color:white; }
 main { padding-block:30px 34px; }
 h2,h3 { margin:0; line-height:1.35; font-size:16px; }
+#plot-title,.design-heading h2,.data-title h2,.measurement-entry h3 { font-size:18px; }
 .page-heading { margin:0 0 17px; font-size:25px; line-height:1.35; }
 #prediction-heading-row { display:flex; align-items:center; flex-wrap:wrap; gap:12px 16px; }
 #prediction-heading { font-size:inherit; }
@@ -232,7 +233,7 @@ td:last-child { text-align:right; }
 </div></header>
 <main>
 <h2 id="simulation-heading" class="page-heading">シミュレーション</h2>
-<div id="prediction-heading-row" class="page-heading" hidden><h2 id="prediction-heading">風速をAIで予測</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button><button type="button" data-method="ridge" aria-pressed="false" title="二次回帰＋リッジ正則化">二次回帰</button></div></div>
+<div id="prediction-heading-row" class="page-heading" hidden><h2 id="prediction-heading">AIによる風速の推定値</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button><button type="button" data-method="ridge" aria-pressed="false" title="二次回帰＋リッジ正則化">二次回帰</button></div></div>
 <div class="workspace">
 <section id="simulation" class="card model"><div class="readout"><div><h3>測定位置での計算風速</h3><p>前面ガード外面から正面の軸上50 mm</p></div><div class="metric"><output id="velocity">…</output><span> m/s</span></div></div><p id="physics-note" role="status" class="note"></p>
 <div class="panel-head"><h2>羽根のプレビュー</h2><span class="chip">3Dモデル</span></div>
