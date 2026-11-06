@@ -5,251 +5,254 @@
 <title>AI Handyfan</title>
 <style>
 :root {
-  color-scheme: light;
-  --ink:#183c38; --teal:#006f60; --muted:#556c65; --line:#ccd9d0;
-  --gold:#a45c03; --surface:#fffefa;
-  --design-surface:#edf1e5;
-  font-family:"Meiryo","Yu Gothic UI",system-ui,sans-serif;
+  color-scheme:light;
+  --background:#f4f7f6;
+  --surface:#fff;
+  --ink:#172d2a;
+  --teal:#0b6555;
+  --teal-hover:#084f42;
+  --muted:#526762;
+  --tint:#eaf0ed;
+  --line:#d9e5df;
+  --input:#cbdad3;
+  --ring:#478879;
+  --sim-color:#006f60;
+  --gold:#a45c03;
+  --measured:#67508b;
+  --radius:16px;
+  --panel-pad:16px;
+  font-family:system-ui,"Meiryo","Yu Gothic UI",sans-serif;
   line-height:1.45;
-  color:var(--ink); background:var(--surface);
+  color:var(--ink);
+  background:var(--background);
 }
 * { box-sizing:border-box; }
 body { margin:0; }
-header { background:#103c37; color:white; }
-.header-inner,main { max-width:1568px; margin:auto; padding:0 48px; }
-.header-inner { height:56px; display:flex; align-items:center; gap:13px; }
-.header-inner h1 { margin:0; letter-spacing:.02em; font:700 24px system-ui; }
-.brand-icon { font:32px Georgia; color:#ecc373; }
+header { background:var(--surface); border-bottom:1px solid var(--line); }
+.header-inner,main { width:min(calc(100% - 80px),1332px); margin-inline:auto; }
+.header-inner { min-height:68px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; }
+.brand { display:flex; align-items:center; gap:11px; }
+.brand h1 { margin:0; font-size:20px; white-space:nowrap; }
+.brand-icon { display:grid; place-items:center; width:36px; height:36px; border-radius:10px; background:var(--teal); color:white; font:26px Georgia; }
 button,.file-btn {
-  cursor:pointer; border:1px solid #a9bdb2; background:var(--surface); color:var(--ink);
-  font:inherit; font-size:14px; border-radius:6px; padding:8px 13px;
+  cursor:pointer; border:1px solid var(--input); background:var(--surface); color:var(--ink);
+  font:inherit; font-size:14px; border-radius:9px; padding:6px 11px;
 }
-button:focus-visible,a:focus-visible,input:focus-visible,.file-btn:focus-within { outline:3px solid #ca832c; outline-offset:3px; }
+button:focus-visible,a:focus-visible,input:focus-visible,.file-btn:focus-within { outline:2px solid var(--ring); outline-offset:3px; }
 button:disabled { cursor:default; opacity:.55; }
-button:hover:not(:disabled),.file-btn:hover { background:#e9f2e9; }
-nav { display:flex; gap:10px; margin:18px 0 30px; }
-nav button { flex:1; min-height:54px; border-color:#9db4a9; border-radius:9px; padding:11px 16px; }
-nav b { font-size:20px; }
-nav button[aria-pressed=true] { background:var(--teal); border-color:var(--teal); color:white; }
-nav button[aria-pressed=true]:hover { background:#075448; color:white; }
-h2,h3 { margin:0; font-size:24px; line-height:1.35; }
-h3 { font-size:18px; }
-.workspace { display:grid; grid-template-columns:minmax(0,1fr) 370px; gap:28px; align-items:start; }
+button:hover:not(:disabled),.file-btn:hover { background:var(--tint); }
+nav { display:flex; gap:4px; padding:4px; border-radius:12px; background:var(--tint); }
+nav button { min-height:34px; padding:5px 13px; color:var(--muted); background:transparent; border:0; }
+nav button:hover:not(:disabled) { background:var(--surface); }
+nav b { font-size:14px; font-weight:500; }
+nav button[aria-pressed=true] b { font-weight:700; }
+nav button[aria-pressed=true],nav button[aria-pressed=true]:hover { background:var(--teal); color:white; }
+main { padding-block:30px 34px; }
+h2,h3 { margin:0; line-height:1.35; font-size:16px; }
+.page-heading { margin:0 0 17px; font-size:25px; line-height:1.35; }
+#prediction-heading-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+#prediction-heading { font-size:inherit; }
+#learning-method,.plot-controls { display:inline-flex; border-radius:11px; }
+#learning-method button,.plot-controls button {
+  border-radius:0; min-height:34px; padding:5px 9px; font-size:13px; white-space:nowrap;
+}
+#learning-method button:first-child,.plot-controls button:first-child { border-radius:11px 0 0 11px; }
+#learning-method button+button,.plot-controls button+button { border-inline-start:0; }
+#learning-method button:last-child,.plot-controls button:last-child { border-radius:0 11px 11px 0; }
+#learning-method button[aria-pressed="true"],.plot-controls button[aria-pressed="true"],.primary,#reset {
+  position:relative; background:var(--teal); border-color:var(--teal); color:white; font-weight:700;
+}
+#learning-method button[aria-pressed="true"]:hover,.plot-controls button[aria-pressed="true"]:hover,.primary:hover:not(:disabled),#reset:hover {
+  background:var(--teal-hover); color:white;
+}
+button:focus-visible { z-index:2; }
+.workspace { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,330px); gap:14px; align-items:start; }
 .model,.learning { grid-column:1; grid-row:1; min-width:0; }
-.model { padding:0; background:transparent; border:0; border-radius:0; box-shadow:none; }
-.learning { display:grid; gap:18px; }
-.prediction-summary,.plot-panel,.controls,.data-card { border:1px solid var(--line); border-radius:10px; padding:18px; }
-.prediction-summary { background:var(--design-surface); }
-.prediction-summary h2 { font-size:32px; line-height:1.25; margin:0; }
-.prediction-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
-#learning-method { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; margin-left:auto; }
-#learning-method button { font-size:13px; min-height:38px; padding:8px 10px; white-space:nowrap; }
-#learning-method button[aria-pressed="true"],#reset { background:var(--teal); border-color:var(--teal); color:white; }
-#learning-method button[aria-pressed="true"]:hover,#reset:hover { background:#075448; color:white; }
-.plot-panel { background:#fff; min-width:0; }
-.plot-panel,.data-card { border:2px solid #9ab0a4; }
-.design-column { grid-column:2; grid-row:1; display:grid; gap:18px; }
-.controls { background:var(--design-surface); box-shadow:none; }
-.design-heading,.panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.design-heading { flex-wrap:wrap; }
-.design-heading h2 { font-size:24px; }
-.design-heading .quiet { margin:0; padding:6px 10px; font-size:12px; white-space:nowrap; }
-.control { border-top:1px solid #e0e6dc; margin-top:16px; padding-top:14px; }
+.learning,.design-column { display:grid; gap:14px; }
+.design-column { grid-column:2; grid-row:1; min-width:0; }
+.card,.predictions>div,.plot-panel,.data-card { padding:var(--panel-pad); background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); }
+.plot-panel,.data-card { border-width:2px; }
+.design-heading,.panel-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.design-heading .quiet { padding:4px 9px; font-size:12px; white-space:nowrap; }
+#reset { background:var(--sim-color); border-color:var(--sim-color); }
+.control { margin-top:16px; }
 .control-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.control-heading label { font-weight:700; font-size:17px; }
-.control-heading output { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
-.control-heading small { margin-left:4px; font-size:13px; color:var(--muted); }
-input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--teal); cursor:pointer; }
-.limits { display:flex; justify-content:space-between; color:var(--muted); font:13px system-ui; }
-.quiet { font-size:13px; background:transparent; }
-.chip { white-space:nowrap; border:1px solid var(--line); padding:3px 10px; border-radius:99px; font-size:12px; color:var(--muted); }
-.primary { background:var(--teal); color:white; border-color:var(--teal); font-weight:700; }
-.primary:hover:not(:disabled) { background:#075448; }
-.measurement-entry,.stl-export-panel { padding:18px; background:#edf2e9; border:0; border-radius:8px; box-shadow:none; }
-.measurement-entry label { display:block; font-weight:700; font-size:16px; }
-.measurement-entry input { width:100%; margin:14px 0; padding:12px; border:1px solid #b7c7be; border-radius:6px; background:white; color:var(--ink); font:inherit; }
-.measurement-entry .primary { width:100%; min-height:46px; font-size:16px; }
+.control-heading label { font-weight:650; font-size:14px; }
+.control-heading output { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+.control-heading small { margin-left:4px; font-size:12px; color:var(--muted); }
+input[type=range] {
+  appearance:none; display:block; width:100%; height:22px; margin:0; background:transparent; cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:4px; background:linear-gradient(to right,var(--teal) var(--filled,0%),var(--tint) var(--filled,0%)); }
+input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13px; margin-top:-4.5px; border:1px solid var(--ring); border-radius:50%; background:var(--surface); }
+input[type=range]::-moz-range-track { height:4px; border-radius:4px; background:var(--tint); }
+input[type=range]::-moz-range-progress { height:4px; border-radius:4px; background:var(--teal); }
+input[type=range]::-moz-range-thumb { width:11px; height:11px; border:1px solid var(--ring); border-radius:50%; background:var(--surface); }
+.limits { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; }
+.quiet { font-size:13px; }
+.chip,#row-count { white-space:nowrap; border-radius:99px; font-size:12px; }
+.chip { border:1px solid var(--line); padding:2px 8px; color:var(--muted); }
+.measurement-entry label { display:block; margin-top:14px; font-weight:650; font-size:14px; }
+.measurement-entry input { width:100%; margin:6px 0 12px; padding:7px 10px; border:1px solid var(--input); border-radius:10px; background:var(--surface); color:var(--ink); font:inherit; }
+.measurement-entry .primary,.stl-export .primary { width:100%; min-height:36px; }
 #quick-error,#data-error,#stl-error { color:#9c381b; font-size:14px; }
 #quick-error:empty,#data-error:empty,#stl-status:empty,#stl-error:empty { display:none; }
 .stl-export { display:grid; gap:10px; }
-.stl-export .primary { width:100%; min-height:44px; }
 .stl-export small { color:var(--muted); font-size:12px; }
 #stl-error { white-space:pre-line; }
-.predictions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0 0 12px; }
-.predictions>div { padding:14px 16px; background:var(--surface); border-radius:7px; font-size:15px; font-weight:700; }
-.prediction-value { display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:5px; }
-.predictions strong { font-family:system-ui,sans-serif; font-size:36px; font-style:normal; line-height:1.15; color:var(--teal); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.predictions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.predictions>div { display:grid; grid-template-rows:1fr auto; padding:12px; min-width:0; }
+.prediction-label { display:flex; align-items:baseline; gap:7px; font-size:14px; font-weight:650; }
+.legend-dot { flex:0 0 7px; height:7px; align-self:start; margin-top:.5em; border-radius:50%; background:var(--sim-color); }
+.legend-dot.gold { background:var(--gold); }
+.legend-dot.measured-only { background:var(--measured); }
+.prediction-value { display:grid; gap:5px; margin-top:9px; }
+.predictions strong { font-size:clamp(23px,2.5vw,36px); font-style:normal; line-height:1.15; color:var(--sim-color); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.predictions strong span { font-size:.44em; font-weight:600; }
 .predictions>div:nth-child(2) strong { color:var(--gold); }
-.predictions>div:nth-child(3) strong { color:#67508b; }
-.legend-dot.measured-only { border-top-style:solid; border-color:#67508b; }
-.predictions small { max-width:220px; font-size:13px; line-height:1.5; font-weight:400; }
-.legend-dot,.legend-line { display:inline-block; width:42px; height:0; border-top:3px dashed var(--teal); vertical-align:middle; margin-right:10px; }
-.legend-dot.gold,.legend-line.measured { border-top-style:solid; border-color:var(--gold); }
-.plot-source-row { display:flex; align-items:center; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin:-6px 0 10px; }
-.source-selector { display:flex; align-items:center; justify-content:center; gap:12px; font-size:14px; color:var(--muted); }
-.source-selector>span { white-space:nowrap; }
-.source-selector[data-source="hybrid"] #source-hybrid,.source-selector[data-source="measured"] #source-only { color:var(--teal); font-weight:700; }
-.source-switch { position:relative; display:grid; place-items:center; flex:0 0 60px; height:44px; }
-.source-switch input { position:absolute; inset:0; z-index:1; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
-.source-switch-track { position:relative; width:52px; height:28px; border-radius:20px; background:#9aafa5; transition:background .18s; }
-.source-switch-track::before { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:white; box-shadow:0 1px 3px #183c3840; transition:transform .18s; }
-.source-switch input:checked + .source-switch-track { background:var(--teal); }
-.source-switch input:checked + .source-switch-track::before { transform:translateX(24px); }
-.source-selector[data-available="false"]>span { color:var(--muted)!important; font-weight:400!important; }
-.source-switch input[aria-disabled="true"] + .source-switch-track { background:#9aafa5; transition:none; }
-.source-message { margin:0 0 14px; color:#75500e; font-size:14px; line-height:1.6; }
-.source-switch input:focus-visible + .source-switch-track { outline:3px solid #ca832c; outline-offset:3px; }
-.plot-head { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
-.plot-source-row h3 { font-size:23px; }
-.plot-head small { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
-.plot-controls { display:flex; gap:5px; flex:1; min-width:310px; }
-.plot-controls button { flex:1; padding:8px 5px; min-height:36px; font-size:13px; white-space:nowrap; }
-.plot-controls button[aria-pressed=true] { background:var(--teal); border-color:var(--teal); color:white; font-weight:700; }
-.plot-controls button[aria-pressed=true]:hover { background:#075448; color:white; }
-.plot-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:9px 20px; margin:0 0 6px; font-size:12px; }
-.plot-legend>span { display:inline-flex; align-items:center; white-space:nowrap; }
-.legend-line { width:32px; margin-right:7px; }
-.legend-band { display:inline-block; width:18px; height:11px; background:#a45c0326; margin-right:7px; }
-.legend-measure { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--gold); margin-right:7px; }
-.plot-panel[data-source="measured"] .legend-line.measured { border-color:#67508b; }
-.plot-panel[data-source="measured"] .legend-band { background:#67508b26; }
-.plot-panel[data-source="measured"] .legend-measure { background:#67508b; }
-svg { display:block; width:100%; height:auto; }
-#simulation .panel-head { margin-top:22px; }
-#drawing { margin:16px 0 12px; background:#edf3e9; border:1px solid #d6e1d3; border-radius:6px; }
-#rotor-canvas { display:block; width:100%; height:clamp(320px,40vh,460px); cursor:grab; touch-action:none; }
+.predictions>div:nth-child(3) strong { color:var(--measured); }
+.predictions small { color:var(--muted); font-size:11px; }
+.plot-panel { min-width:0; }
+#plot-context { color:var(--muted); font-size:14px; margin:4px 0 10px; }
+.plot-series { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.plot-series button { display:inline-flex; align-items:center; gap:6px; min-height:36px; max-width:100%; padding:6px 9px; text-align:left; font-size:13px; }
+.plot-series button[aria-pressed=true] { border-color:var(--ring); background:var(--tint); }
+.plot-series button[aria-disabled=true] { color:var(--muted); border-color:var(--input); background:var(--background); }
+.series-check { flex:0 0 12px; color:var(--teal); font-weight:700; text-align:center; }
+.plot-series button[aria-pressed=false] .series-check { visibility:hidden; }
+.plot-series .legend-line { flex-shrink:0; }
+.source-message { margin:0 0 12px; color:#75500e; font-size:13px; line-height:1.6; }
+.plot-head { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+.plot-head>span { font-size:12px; color:var(--muted); }
+.plot-controls button { min-height:30px; }
+.plot-legend { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; margin-top:6px; font-size:12px; color:var(--muted); }
+.plot-legend>span,.band-control,.band-control label { display:inline-flex; align-items:center; }
+.band-control { flex-wrap:wrap; gap:6px; max-width:100%; }
+.band-control select { min-height:32px; max-width:100%; padding:4px 7px; color:var(--ink); border:1px solid var(--input); border-radius:7px; background:var(--surface); font:inherit; }
+.band-control select:focus-visible { outline:2px solid var(--ring); outline-offset:3px; }
+.band-control select:disabled { color:var(--muted); }
+.legend-line { width:22px; border-top:2px dashed var(--sim-color); }
+.legend-line.hybrid { border-top-style:solid; border-color:var(--gold); }
+.legend-line.measured { border-top:3px dotted var(--measured); }
+.legend-band { width:14px; height:9px; border-radius:2px; opacity:.24; margin-right:6px; }
+.legend-measure { width:9px; height:9px; border-radius:50%; background:#344d45; margin-right:6px; }
+#plot svg { display:block; width:100%; height:auto; }
+.plot-footer,.view-tools {
+  display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
+  margin:var(--panel-pad) calc(-1 * var(--panel-pad)) calc(-1 * var(--panel-pad));
+  padding:12px var(--panel-pad); border-top:1px solid var(--line);
+  border-radius:0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
+  background:var(--background); color:var(--muted); font-size:12px;
+}
+#simulation .panel-head { margin-top:13px; padding-top:14px; border-top:1px solid var(--line); }
+#drawing { margin-top:12px; background:var(--tint); border-radius:11px; overflow:hidden; }
+#rotor-canvas { display:block; width:100%; height:clamp(320px,48vh,420px); cursor:grab; touch-action:none; }
 #rotor-canvas:active { cursor:grabbing; }
-#rotor-canvas:focus-visible { outline:2px solid var(--teal); }
-.view-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-.view-tools small { color:var(--muted); font-size:13px; }
-.view-tools button { padding:5px 9px; font-size:12px; margin-left:3px; }
-.readout { display:flex; align-items:center; justify-content:space-between; gap:16px; background:#174b43; border-radius:7px; padding:18px 20px; color:white; }
-.readout h3 { font-size:18px; }
-.readout p { color:#dfebe2; font-size:13px; margin:6px 0 0; }
-.metric { white-space:nowrap; color:#f5cf88; }
-.metric output { font:600 50px system-ui; font-variant-numeric:tabular-nums; }
+#rotor-canvas:focus-visible { outline:2px solid var(--ring); outline-offset:-3px; }
+.view-tools button { padding:4px 8px; font-size:12px; margin-left:3px; }
+.readout { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.readout p { color:var(--muted); font-size:13px; margin:4px 0 0; }
+.metric { white-space:nowrap; }
+.metric output { font-size:38px; font-weight:700; font-variant-numeric:tabular-nums; }
 .metric span { font-size:14px; }
-.note { margin:8px 0 0; color:var(--muted); font-size:13px; line-height:1.7; }
-.data-card { margin-top:18px; background:#fff; }
-.data-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-.data-title { display:flex; align-items:center; gap:12px; }
-.data-title h2 { font-size:24px; }
-#row-count { color:var(--muted); font-size:13px; white-space:nowrap; }
-.measurement-context { font-size:13px; margin:4px 0 10px; }
-.tools { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:0; }
-.tools a { color:var(--teal); font-size:14px; }
+.note { margin:8px 0 0; color:var(--muted); font-size:12px; line-height:1.65; }
+.data-card { margin-top:14px; }
+.data-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.data-title { display:flex; align-items:center; gap:9px; }
+#row-count { color:var(--teal); background:var(--tint); padding:2px 8px; }
+.measurement-context { color:var(--muted); font-size:13px; margin:5px 0 10px; }
+.tools { display:flex; align-items:center; flex-wrap:wrap; gap:7px; }
+.tools a { color:var(--teal); font-size:13px; padding:5px; }
+.tools button,.file-btn { font-size:13px; padding:5px 8px; background:var(--background); }
 .file-btn { position:relative; }
 .file-btn input { position:absolute; inset:0; width:100%; opacity:0; cursor:pointer; }
 .table-wrap { overflow-x:auto; }
 table { width:100%; border-collapse:collapse; text-align:left; font-size:14px; }
-th { background:#e1e7d8; padding:7px 12px; font-weight:700; }
-td { padding:5px 12px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
-td button { padding:2px 10px; font-size:13px; white-space:nowrap; }
+th { padding:8px; font-weight:650; border-bottom:1px solid var(--line); }
+td { padding:6px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+tr:last-child td { border-bottom:0; }
+td button { padding:4px 8px; border-color:transparent; font-size:13px; white-space:nowrap; }
 td:last-child { text-align:right; }
 .empty { color:var(--muted); text-align:center!important; padding:18px; }
 .sr-only { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
 [hidden] { display:none!important; }
-@media(max-width:1100px) and (min-width:741px) {
-  .header-inner,main { padding-inline:28px; }
-  .workspace { grid-template-columns:minmax(0,1fr) 280px; gap:22px; }
-  .design-heading h2 { font-size:21px; }
-  .control-heading { flex-wrap:wrap; }
-  .predictions { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .predictions>div { padding:14px; }
-  .predictions strong { font-size:28px; }
+@media(max-width:1100px) {
+  .header-inner,main { width:calc(100% - 48px); }
+  .workspace { grid-template-columns:minmax(0,1fr) 280px; }
 }
 @media(max-width:900px) {
-  .workspace { grid-template-columns:1fr; gap:26px; }
-  .model,.learning { grid-column:1; grid-row:1; }
-  .design-column { grid-column:1; grid-row:2; border:0; padding:0; gap:16px; }
-  .controls #controls { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-  .control { margin-top:14px; padding-top:12px; }
-  .control-heading { display:block; }
-  .control-heading label { display:block; margin-bottom:2px; }
-  .measurement-entry { max-width:none; }
-  .measurement-entry input { margin:12px 0; }
+  .workspace { grid-template-columns:minmax(0,1fr); }
+  .design-column { grid-column:1; grid-row:2; }
 }
 @media(max-width:740px) {
-  .header-inner,main { padding-inline:16px; }
-  .header-inner { height:56px; }
-  .header-inner h1 { font-size:21px; }
-  nav { margin:14px 0 24px; gap:10px; }
-  nav button { min-height:44px; padding:8px; }
-  nav b { font-size:15px; }
-  .prediction-summary,.plot-panel,.controls,.data-card { padding:12px; }
-  .learning { gap:14px; }
-  .prediction-summary h2 { font-size:26px; }
-  .predictions { grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-  .predictions>div { padding:12px; font-size:12px; }
+  :root { --panel-pad:14px; }
+  .header-inner,main { width:calc(100% - 28px); }
+  .header-inner { grid-template-columns:minmax(0,1fr); gap:8px; padding-block:10px 12px; }
+  .brand h1 { font-size:18px; }
+  nav button { flex:1; min-height:34px; padding-inline:8px; }
+  main { padding-top:22px; }
+  .page-heading { font-size:22px; margin-bottom:13px; }
+  #prediction-heading-row { flex-direction:column; align-items:flex-start; }
+  .predictions { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .predictions>div:first-child { grid-column:1/-1; }
-  .predictions strong { font-size:26px; }
-  .predictions small { font-size:12px; }
-  .prediction-value { gap:6px; margin-top:6px; }
-  .legend-dot { width:23px; margin-right:6px; border-top-width:2px; }
-  .plot-source-row { margin:-6px 0 8px; }
-  .source-selector { gap:6px; font-size:12px; }
-  .source-switch { flex-basis:56px; }
-  .plot-head { gap:10px; margin-bottom:12px; }
-  .plot-source-row h3 { font-size:18px; }
-  .plot-controls { order:1; flex-basis:100%; min-width:0; }
-  .plot-controls button { padding:8px 3px; font-size:12px; }
-  .plot-head small { margin-left:0; font-size:12px; }
-  .plot-legend { justify-content:flex-start; gap:8px 14px; font-size:11px; }
-  .legend-line { width:22px; margin-right:5px; border-top-width:2px; }
-  .design-heading h2 { font-size:22px; }
-  .design-heading .quiet { font-size:12px; }
-  .controls #controls { gap:12px; }
-  .control-heading label { font-size:13px; }
-  .control-heading output { font-size:20px; }
-  .control-heading small,.limits { font-size:12px; }
-  .control-heading small { margin-left:3px; }
-  input[type=range] { margin:12px 0 4px; }
-  .measurement-entry label { font-size:15px; }
-  .measurement-entry .primary { font-size:15px; }
-  .data-card { margin-top:24px; }
-  .data-heading { gap:12px; }
-  .data-title h2 { font-size:20px; }
-  .measurement-context { font-size:12px; margin:10px 0 14px; }
-  .tools { gap:10px; }
-  .tools a,.tools button,.file-btn { font-size:13px; }
+  .predictions strong { font-size:clamp(22px,7vw,30px); }
+  .prediction-label { font-size:13px; }
+  .plot-series button { padding-inline:7px; font-size:12px; }
+  .plot-series .legend-line { width:18px; }
+  .plot-controls button { font-size:12px; }
+  .plot-legend { gap:6px 10px; font-size:11px; }
+  .data-heading { align-items:flex-start; }
+  .measurement-context { font-size:12px; }
   table { font-size:12px; }
-  th { padding:8px 5px; }
-  td { padding:8px 5px; }
-  td button { padding:5px 7px; font-size:12px; }
-  #rotor-canvas { height:260px; }
-  .readout { padding:14px; gap:12px; }
-  .readout h3 { font-size:15px; }
+  th,td { padding-inline:4px; }
+  th span { display:block; font-size:11px; font-weight:400; }
+  td button { font-size:12px; }
+  #rotor-canvas { height:270px; }
+  .readout { gap:10px; }
+  .readout h3 { font-size:14px; }
   .readout p { font-size:12px; }
-  .metric output { font-size:34px; }
+  .metric output { font-size:29px; }
   .metric span { font-size:12px; }
 }
-@media(prefers-reduced-motion:reduce) { .source-switch-track,.source-switch-track::before { transition:none; } }
 
 </style>
 </head>
 <body data-mode="simulation">
-<header><div class="header-inner"><span class="brand-icon" aria-hidden="true">✤</span><h1>AI Handyfan</h1></div></header>
-<main>
+<header><div class="header-inner"><div class="brand"><span class="brand-icon" aria-hidden="true">✤</span><h1>AI Handyfan</h1></div>
 <nav aria-label="実験モード"><button id="sim-tab" aria-pressed="true"><b>シミュレーション</b></button><button id="ml-tab" aria-pressed="false"><b>AI予測</b></button></nav>
+</div></header>
+<main>
+<h2 id="simulation-heading" class="page-heading">シミュレーション</h2>
+<div id="prediction-heading-row" class="page-heading" hidden><h2 id="prediction-heading">風速をAIで予測</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button><button type="button" data-method="ridge" aria-pressed="false" title="二次回帰＋リッジ正則化">二次回帰</button></div></div>
 <div class="workspace">
 <section id="simulation" class="card model"><div class="readout"><div><h3>測定位置での計算風速</h3><p>前面ガード外面から正面の軸上50 mm</p></div><div class="metric"><output id="velocity">…</output><span> m/s</span></div></div><p id="physics-note" role="status" class="note"></p>
 <div class="panel-head"><h2>羽根のプレビュー</h2><span class="chip">3Dモデル</span></div>
 <div id="drawing"><canvas id="rotor-canvas" tabindex="0" aria-label="羽根とハブの3Dモデル" aria-describedby="view-help"></canvas></div>
 <div class="view-tools"><small id="view-help">ドラッグまたは矢印キーで回転</small><div><button id="view-front">正面</button><button id="view-reset">初期視点</button><button id="view-out" aria-label="縮小">−</button><button id="view-in" aria-label="拡大">＋</button></div></div>
 </section>
-<section id="learning" class="learning" hidden><div class="prediction-summary" aria-labelledby="prediction-heading"><div class="prediction-heading"><h2 id="prediction-heading">風速を予測する</h2><div id="learning-method" role="group" aria-label="学習方法"><button type="button" data-method="gp" aria-pressed="true">ガウス過程回帰</button><button type="button" data-method="deep" aria-pressed="false">Deep Learning</button><button type="button" data-method="ridge" aria-pressed="false" title="二次回帰＋リッジ正則化">二次回帰</button></div></div>
+<section id="learning" class="learning" aria-labelledby="prediction-heading" hidden>
 <input id="training-size" type="hidden" value="100"><input id="deep-epochs" type="hidden" value="400">
-<div class="predictions"><div><span class="legend-dot"></span>計算データで学習<div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim" class="sr-only"></small></div></div><div><span class="legend-dot gold"></span><span id="prediction-label">計算＋実測データで補正</span><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><span class="legend-dot measured-only"></span>実測データで学習<div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
+<div class="predictions"><div><div class="prediction-label"><span class="legend-dot" aria-hidden="true"></span>計算データで学習</div><div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim" class="sr-only"></small><small>計算データからの基準値</small></div></div><div><div class="prediction-label"><span class="legend-dot gold" aria-hidden="true"></span><span id="prediction-label">計算＋実測データで補正</span></div><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><div class="prediction-label"><span class="legend-dot measured-only" aria-hidden="true"></span>実測データで学習</div><div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
+<section class="plot-panel" aria-labelledby="plot-title"><h3 id="plot-title">羽根の先端幅と予測風速</h3><p id="plot-context"></p>
+<div id="plot-series" class="plot-series" role="group" aria-label="表示する予測">
+<button type="button" value="sim" aria-pressed="true"><span class="series-check" aria-hidden="true">✓</span><i class="legend-line" aria-hidden="true"></i>計算データで学習</button>
+<button type="button" value="hybrid" aria-pressed="true" aria-disabled="true" aria-describedby="prediction-source-message"><span class="series-check" aria-hidden="true">✓</span><i class="legend-line hybrid" aria-hidden="true"></i>計算＋実測データで補正</button>
+<button type="button" value="measured" aria-pressed="false" aria-disabled="true" aria-describedby="prediction-source-message"><span class="series-check" aria-hidden="true">✓</span><i class="legend-line measured" aria-hidden="true"></i>実測データで学習</button>
 </div>
-<section class="plot-panel" aria-labelledby="plot-title"><div class="plot-source-row"><h3 id="plot-title">羽根の先端幅と予測風速</h3><div id="prediction-source" class="source-selector" data-source="hybrid" role="group" aria-label="実測データの利用方法"><span id="source-only">実測のみ</span><label class="source-switch"><input id="prediction-source-switch" type="checkbox" role="switch" aria-label="計算データを併用" aria-disabled="true" aria-describedby="prediction-source-message" checked><span class="source-switch-track" aria-hidden="true"></span></label><span id="source-hybrid">計算＋実測</span></div></div>
 <p id="prediction-source-message" class="source-message" role="alert" hidden>実測した風速を入力し、「実測値で学習する」のボタンを押してください。</p>
-<div class="plot-head"><div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div><small id="plot-context"></small></div>
-<div class="plot-legend" aria-label="グラフの凡例"><span><i class="legend-line"></i>計算データで学習</span><span id="plot-real-key" hidden><i class="legend-line measured"></i><span id="plot-real-label">計算＋実測データで補正</span></span><span id="plot-band-key" hidden><i class="legend-band"></i>予測の幅（目安）</span><span id="plot-measure-key" hidden><i class="legend-measure"></i>実測値</span></div>
-<div id="plot"></div></section><p class="note" id="sim-error" role="alert" hidden></p></section>
+<div class="plot-head"><span>横軸</span><div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div></div>
+<div id="plot"></div>
+<div class="plot-legend">
+<div class="band-control"><label for="plot-band"><i id="plot-band-key" class="legend-band" aria-hidden="true"></i>予測の幅（目安）</label><select id="plot-band" disabled>
+<option value="" hidden>表示できる予測がありません</option><option value="sim">計算データで学習</option><option value="hybrid">計算＋実測データで補正</option><option value="measured">実測データで学習</option>
+</select></div><span id="plot-measure-key" hidden><i class="legend-measure" aria-hidden="true"></i>実測値</span></div>
+<div class="plot-footer"><span id="plot-unit"></span><span id="plot-design"></span></div></section><p class="note" id="sim-error" role="alert" hidden></p></section>
 <div class="design-column"><aside class="card controls"><div class="design-heading"><h2>羽根の設計</h2><button id="reset" class="quiet">初期値に戻す</button></div><div id="controls"></div></aside>
-<section id="stl-entry" class="card stl-export-panel" aria-label="STL出力"><div class="stl-export"><button class="primary" id="export-stl">STLをダウンロード</button><small>羽根とハブを出力（mm）</small></div><p id="stl-status" class="note" role="status"></p><p id="stl-error" role="alert"></p></section>
+<section id="stl-entry" class="card stl-export-panel" aria-label="STL出力"><div class="stl-export"><h3>羽根の出力</h3><button class="primary" id="export-stl">STLをダウンロード</button><small>羽根とハブを出力（mm）</small></div><p id="stl-status" class="note" role="status"></p><p id="stl-error" role="alert"></p></section>
 <section id="measurement-entry" class="card measurement-entry" aria-label="実測風速の入力" hidden>
-<label for="measured-speed">実測した風速（m/s）</label>
+<h3>実測値を追加</h3>
+<p class="measurement-context">前面ガード外面から軸上50 mm</p>
+<label for="measured-speed">実測風速（m/s）</label>
 <input id="measured-speed" type="number" inputmode="decimal" min="0" step="any" placeholder="例 1.8">
 <button class="primary" id="train">実測値で学習する</button>
 <p class="sr-only" id="train-status" role="status"></p>
@@ -257,7 +260,7 @@ td:last-child { text-align:right; }
 </section></div>
 </div>
 <section id="measurements" class="data-card" hidden><div class="data-heading"><div class="data-title"><h2>実測値　学習データ一覧</h2><span id="row-count">0 件</span></div><div class="tools"><label class="file-btn">CSVを追加<input type="file" id="csv" accept=".csv,text/csv"></label><a href="data:text/csv;charset=utf-8,tip_width_mm%2Cpitch_deg%2Cblade_count%2Cwind_speed_m_s%0A" download="ML_HandyFan_template.csv">CSVひな形</a><button id="save-csv" class="quiet">CSVを保存</button></div></div><p class="measurement-context">ガード装着・前面ガード外面から軸上50 mm</p>
-<div class="table-wrap"><table><caption class="sr-only">実測値の学習データ一覧</caption><thead><tr><th>先端幅 (mm)</th><th>ピッチ角（度）</th><th>枚数</th><th>実測風速 (m/s)</th><th><span class="sr-only">行操作</span></th></tr></thead><tbody id="rows"></tbody></table></div><p id="data-error" role="alert"></p></section>
+<div class="table-wrap"><table><caption class="sr-only">実測値の学習データ一覧</caption><thead><tr><th>先端幅 <span>(mm)</span></th><th>ピッチ角 <span>(度)</span></th><th>枚数</th><th>実測風速 <span>(m/s)</span></th><th><span class="sr-only">行操作</span></th></tr></thead><tbody id="rows"></tbody></table></div><p id="data-error" role="alert"></p></section>
 </main><script>
 // Generated by certify.mjs. Inclusive selectable bounds; only converged simulations are eligible for training.
 globalThis.FanRanges = {"width":{"min":25,"max":50},"pitch":{"min":15,"max":45},"count":{"min":2,"max":6}};
@@ -8451,19 +8454,26 @@ return globalThis.FanStlRuntime;})().catch(error=>{ready=null;throw error;});ret
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
+const plotChoices = [...$("plot-series").querySelectorAll("button")];
+const plotStyles = {
+    sim: {color:"#006f60", dash:"7 6"},
+    hybrid: {color:"#a45c03"},
+    measured: {color:"#67508b", dash:"1 6"}
+};
+let preferredBand = "hybrid";
 const fields = [
     { key: "width", label: "羽根の先端幅", unit: "mm", ...FanRanges.width, initial: 40 },
     { key: "pitch", label: "ピッチ角", unit: "度", ...FanRanges.pitch, initial: 30 },
     { key: "count", label: "羽根枚数", unit: "枚", ...FanRanges.count, initial: 4 }
 ];
 const design = Object.fromEntries(fields.map(f => [f.key, f.initial]));
-let measuredRows = [], measuredModel = null, combinedModel = null, simModel = null, mode = "simulation";
+let measuredRows = [], combinedModel = null, simModel = null, mode = "simulation";
 let fittedRows = [], measuredOnlyModel = null;
 let ridgeModels = null;
 let trainingDesigns = [];
 let learningMethod = "gp", gpSimModel = null, gpMeasuredModel = null;
 let deepSimModel = null, deepMeasuredModel = null, deepEpochs = 400, deepBaseSignature = "";
-let dataSource = "hybrid", gpCorrectionModel = null, deepCorrectionModel = null;
+let gpCorrectionModel = null, deepCorrectionModel = null;
 let deepJob = 0, deepBusy = false;
 let worker = null, workerURL = null, localOnly = false, revision = 0, timer, currentKey = "", lastResult = null;
 const cache = new Map();
@@ -8482,7 +8492,9 @@ function buildControls() {
 }
 function refreshDesign() {
     for (const f of fields) {
-        $(f.key).value = design[f.key];
+        const slider = $(f.key);
+        slider.value = design[f.key];
+        slider.style.setProperty("--filled", ((design[f.key] - f.min) / (f.max - f.min)) * 100 + "%");
         $(f.key + "-value").value = design[f.key];
     }
     if (mode === "simulation") {
@@ -8495,8 +8507,8 @@ function refreshDesign() {
 function switchMode(next) {
     mode = next;
     document.body.dataset.mode = next;
-    $("simulation").hidden = $("stl-entry").hidden = next !== "simulation";
-    $("learning").hidden = $("measurements").hidden = $("measurement-entry").hidden = next !== "learning";
+    $("simulation-heading").hidden = $("simulation").hidden = $("stl-entry").hidden = next !== "simulation";
+    $("prediction-heading-row").hidden = $("learning").hidden = $("measurements").hidden = $("measurement-entry").hidden = next !== "learning";
     $("sim-tab").setAttribute("aria-pressed", String(next === "simulation"));
     $("ml-tab").setAttribute("aria-pressed", String(next === "learning"));
     if (next === "learning") {
@@ -8635,12 +8647,13 @@ function prepareRidgeModels() {
 function activateModels() {
     for (const button of $("learning-method").querySelectorAll("button"))
         button.setAttribute("aria-pressed", String(button.dataset.method === learningMethod));
-    $("prediction-source-switch").setAttribute("aria-disabled",String(!measuredRows.length));
-    $("prediction-source").dataset.available = String(Boolean(measuredRows.length));
-    if (measuredRows.length) {
-        $("prediction-source-message").hidden = true;
-        $("prediction-source-switch").removeAttribute("aria-describedby");
-    } else $("prediction-source-switch").setAttribute("aria-describedby","prediction-source-message");
+    const hasMeasurements = measuredRows.length > 0;
+    for (const choice of plotChoices.slice(1)) {
+        choice.setAttribute("aria-disabled", String(!hasMeasurements));
+        if (hasMeasurements) choice.removeAttribute("aria-describedby");
+        else choice.setAttribute("aria-describedby", "prediction-source-message");
+    }
+    if (hasMeasurements) $("prediction-source-message").hidden = true;
     let correction;
     if (learningMethod === "ridge") {
         simModel = ridgeModels.baseline;
@@ -8656,10 +8669,6 @@ function activateModels() {
         correction = deepCorrectionModel;
     }
     combinedModel = simModel && correction ? FanHybrid.combine(simModel,correction) : null;
-    measuredModel = dataSource === "hybrid" ? combinedModel : measuredOnlyModel;
-    document.querySelector(".plot-panel").dataset.source = dataSource;
-    $("plot-real-label").textContent = dataSource === "hybrid" ? "計算＋実測データで補正" : "実測データで学習";
-    for (const id of ["plot-real-key","plot-band-key","plot-measure-key"]) $(id).hidden = !measuredModel;
     renderLearning();
 }
 function deepStorageKey(kind) {
@@ -8759,7 +8768,9 @@ function showPrediction(model, id, intervalId, hybrid = false) {
         return;
     }
     const p = model.predict(design.width, design.pitch, design.count);
-    $(id).textContent = fmt(p.mean) + " m/s";
+    const unit = document.createElement("span");
+    unit.textContent = " m/s";
+    $(id).replaceChildren(fmt(p.mean), unit);
     $(intervalId).textContent = (learningMethod === "gp" && !hybrid ? "約95%区間 " : "予測の幅（目安） ") + interval(p).map(v => fmt(v)).join(" ～ ") + " m/s";
 }
 function drawPlot() {
@@ -8767,18 +8778,33 @@ function drawPlot() {
     const fixed = fields.filter(field => field !== axis);
     $("plot-title").textContent = axis.label + "と予測風速";
     $("plot-context").textContent = fixed.map(field => field.label + " " + design[field.key] + field.unit).join("・");
+    $("plot-unit").textContent = "横軸の単位 " + axis.unit;
+    $("plot-design").textContent = "現在の設計値 " + design[axis.key] + " " + axis.unit;
     const {min,max} = axis, span = max-min;
-    const measuredColor = dataSource === "hybrid" ? "#a45c03" : "#67508b";
-    const series = [[simModel,"#006f60",true],[measuredModel,measuredColor,false]].filter(s=>s[0]).map(([model,color,dashed])=>({color,dashed,points:Array.from({length:span+1},(_,offset)=>{
-        const point={...design,[axis.key]:min+offset};
-        const p=model.predict(point.width,point.pitch,point.count);
-        return {mean:p.mean,range:interval(p)};
+    const models = {sim:simModel, hybrid:combinedModel, measured:measuredOnlyModel};
+    const visible = plotChoices.filter(choice => choice.getAttribute("aria-pressed") === "true" && models[choice.value]).map(choice => choice.value);
+    const bandKey = visible.includes(preferredBand) ? preferredBand : visible.includes("hybrid") ? "hybrid" : visible[0];
+    const bandControl = $("plot-band");
+    for (const option of bandControl.options) option.disabled = Boolean(option.value) && !visible.includes(option.value);
+    bandControl.value = bandKey ?? "";
+    bandControl.disabled = !bandKey;
+    $("plot-band-key").style.backgroundColor = bandKey ? plotStyles[bandKey].color : "transparent";
+    const series = visible.map(key => ({key, ...plotStyles[key], points:Array.from({length:span+1}, (_,offset) => {
+        const point = {...design,[axis.key]:min+offset};
+        return models[key].predict(point.width,point.pitch,point.count);
     })}));
-    if (!series.length) { $("plot").replaceChildren(); return; }
-    const matchesSlice=row=>fixed.every(field=>row[field.key]===design[field.key]);
-    const observed=measuredModel ? fittedRows.filter(matchesSlice).map(row=>({...row,color:measuredColor,measured:true})) : [];
-    const dots=trainingDesigns.filter(matchesSlice).map(row=>({...row,color:"#006f60",measured:false})).concat(observed);
-    const values=series.flatMap(s=>s.points.flatMap(p=>p.range)).concat(dots.map(row=>row.speed));
+    const band = series.find(item => item.key === bandKey);
+    const bounds = band ? band.points.map(interval) : [];
+    const matchesSlice = row => fixed.every(field => row[field.key] === design[field.key]);
+    const observed = fittedRows.filter(matchesSlice).map(row => ({...row, kind:"measured", color:"#344d45", radius:5.5}));
+    const samples = visible.includes("sim") ? trainingDesigns.filter(matchesSlice) : [];
+    const dots = samples.map(row => ({...row, kind:"sim", color:plotStyles.sim.color, radius:4})).concat(observed);
+    $("plot-measure-key").hidden = !observed.length;
+    if (!series.length && !dots.length) {
+        $("plot").textContent = "表示する予測を選んでください。";
+        return;
+    }
+    const values = series.flatMap(s => s.points.map(p => p.mean)).concat(bounds.flat(), dots.map(row => row.speed));
     const floor=Math.min(0,...values),ceiling=Math.max(1,...values);
     const raw=(ceiling-floor)/4,unit=10**Math.floor(Math.log10(raw));
     const step=[1,2,2.5,5,10].find(n=>n*unit>=raw)*unit;
@@ -8799,14 +8825,18 @@ function drawPlot() {
         lines+='<text x="'+x(value)+'" y="'+(bottom+25)+'" text-anchor="middle">'+value+axis.unit+'</text>';
     }
     lines+='</g>';
-    for(const s of series) {
-        const coords=get=>s.points.map((point,i)=>x(min+i).toFixed(2)+","+y(get(point)).toFixed(2));
-        lines+='<polygon points="'+coords(p=>p.range[0]).concat(coords(p=>p.range[1]).reverse()).join(" ")+'" fill="'+s.color+'" opacity=".13"/><polyline points="'+coords(p=>p.mean).join(" ")+'" stroke="'+s.color+'" fill="none" stroke-width="2.5" stroke-linecap="round"'+(s.dashed ? ' stroke-dasharray="7 6"' : '')+'/>';
+    const coords = values => values.map((value,i) => x(min+i).toFixed(2)+","+y(value).toFixed(2));
+    if (band) {
+        const area = coords(bounds.map(range => range[0])).concat(coords(bounds.map(range => range[1])).reverse());
+        lines += '<polygon data-series="'+band.key+'" points="'+area.join(" ")+'" fill="'+band.color+'" opacity=".15"/>';
+    }
+    for (const s of series) {
+        lines += '<polyline data-series="'+s.key+'" points="'+coords(s.points.map(p => p.mean)).join(" ")+'" stroke="'+s.color+'" fill="none" stroke-width="2.5" stroke-linecap="round"'+(s.dash ? ' stroke-dasharray="'+s.dash+'"' : '')+'/>';
     }
     for(const row of dots) {
-        lines+='<circle cx="'+x(row[axis.key])+'" cy="'+y(row.speed)+'" r="'+(row.measured ? 4.5 : 3)+'" fill="'+row.color+'" stroke="white" stroke-width="1"><title>'+row.width+' mm・'+row.pitch+' 度・'+row.count+' 枚：'+fmt(row.speed)+' m/s</title></circle>';
+        lines+='<circle data-point="'+row.kind+'" cx="'+x(row[axis.key])+'" cy="'+y(row.speed)+'" r="'+row.radius+'" fill="'+row.color+'" stroke="white" stroke-width="1"><title>'+row.width+' mm・'+row.pitch+' 度・'+row.count+' 枚：'+fmt(row.speed)+' m/s</title></circle>';
     }
-    $("plot").innerHTML='<svg viewBox="0 0 '+width+' '+height+'" role="img" aria-label="'+axis.label+'に対する風速の予測平均と予測の幅"><g font-size="'+(compact ? 13 : 14)+'" fill="#51685d" font-family="system-ui">'+lines+'<path d="M'+x(design[axis.key])+' '+top+'V'+bottom+'" stroke="#344d45" stroke-dasharray="3 3"/></g></svg>';
+    $("plot").innerHTML='<svg viewBox="0 0 '+width+' '+height+'" role="img" aria-label="'+axis.label+'に対する風速の予測と学習データ"><g font-size="'+(compact ? 13 : 14)+'" fill="#51685d" font-family="system-ui">'+lines+'<path d="M'+x(design[axis.key])+' '+top+'V'+bottom+'" stroke="#344d45" stroke-dasharray="3 3"/></g></svg>';
 }
 function renderLearning() {
     const pitches = trainingDesigns.map(row => row.pitch);
@@ -8973,22 +9003,19 @@ for (const button of $("learning-method").querySelectorAll("button")) {
         else { activateModels(); trainDeepModels(); }
     };
 }
-$("prediction-source").onclick = event => {
-    if (!measuredRows.length) {
-        event.preventDefault();
-        $("prediction-source-message").hidden = false;
-    }
-};
-$("prediction-source-switch").onchange = () => {
-    if (!measuredRows.length) {
-        $("prediction-source-switch").checked = dataSource === "hybrid";
-        $("prediction-source-message").hidden = false;
-        return;
-    }
-    dataSource = $("prediction-source-switch").checked ? "hybrid" : "measured";
-    $("prediction-source").dataset.source = dataSource;
-    if (learningMethod === "gp") prepareSimModel();
-    else activateModels();
+for (const choice of plotChoices) {
+    choice.onclick = () => {
+        if (choice.getAttribute("aria-disabled") === "true") {
+            $("prediction-source-message").hidden = false;
+            return;
+        }
+        choice.setAttribute("aria-pressed", String(choice.getAttribute("aria-pressed") !== "true"));
+        drawPlot();
+    };
+}
+$("plot-band").onchange = event => {
+    preferredBand = event.target.value;
+    drawPlot();
 };
 for (const button of $("plot-axis").querySelectorAll("button")) {
     button.onclick = () => {
