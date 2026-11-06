@@ -18,7 +18,7 @@
   --ring:#478879;
   --sim-color:#006f60;
   --gold:#a45c03;
-  --measured:#67508b;
+  --measured:#1d4ed8;
   --radius:16px;
   --panel-pad:16px;
   font-family:system-ui,"Meiryo","Yu Gothic UI",sans-serif;
@@ -50,7 +50,7 @@ nav button[aria-pressed=true],nav button[aria-pressed=true]:hover { background:v
 main { padding-block:30px 34px; }
 h2,h3 { margin:0; line-height:1.35; font-size:16px; }
 .page-heading { margin:0 0 17px; font-size:25px; line-height:1.35; }
-#prediction-heading-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+#prediction-heading-row { display:flex; align-items:center; flex-wrap:wrap; gap:12px 16px; }
 #prediction-heading { font-size:inherit; }
 #learning-method,.plot-controls { display:inline-flex; border-radius:11px; }
 #learning-method button,.plot-controls button {
@@ -92,8 +92,11 @@ input[type=range]::-moz-range-thumb { width:11px; height:11px; border:1px solid 
 .quiet { font-size:13px; }
 .chip,#row-count { white-space:nowrap; border-radius:99px; font-size:12px; }
 .chip { border:1px solid var(--line); padding:2px 8px; color:var(--muted); }
-.measurement-entry label { display:block; margin-top:14px; font-weight:650; font-size:14px; }
-.measurement-entry input { width:100%; margin:6px 0 12px; padding:7px 10px; border:1px solid var(--input); border-radius:10px; background:var(--surface); color:var(--ink); font:inherit; }
+.measurement-entry { display:grid; gap:8px; }
+.measurement-input { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+.measurement-entry #quick-error { margin:0; }
+.measurement-entry input { width:100%; min-width:0; padding:7px 10px; border:1px solid var(--input); border-radius:10px; background:var(--surface); color:var(--ink); font:inherit; }
+.measurement-entry .primary { white-space:nowrap; }
 .measurement-entry .primary,.stl-export .primary { width:100%; min-height:36px; }
 #quick-error,#data-error,#stl-error { color:#9c381b; font-size:14px; }
 #quick-error:empty,#data-error:empty,#stl-status:empty,#stl-error:empty { display:none; }
@@ -113,17 +116,17 @@ input[type=range]::-moz-range-thumb { width:11px; height:11px; border:1px solid 
 .predictions>div:nth-child(3) strong { color:var(--measured); }
 .predictions small { color:var(--muted); font-size:11px; }
 .plot-panel { min-width:0; }
-#plot-context { color:var(--muted); font-size:14px; margin:4px 0 10px; }
-.plot-series { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-.plot-series button { display:inline-flex; align-items:center; gap:6px; min-height:36px; max-width:100%; padding:6px 9px; text-align:left; font-size:13px; }
-.plot-series button[aria-pressed=true] { border-color:var(--ring); background:var(--tint); }
+.plot-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 1em; margin-bottom:10px; }
+#plot-context { color:var(--muted); font-size:14px; margin:0; }
+.plot-series button { display:inline-flex; align-items:center; gap:4px; }
+.plot-series button[aria-pressed=true]+button[aria-pressed=true]:not([aria-disabled=true]) { box-shadow:inset 1px 0 #81aa9f; }
 .plot-series button[aria-disabled=true] { color:var(--muted); border-color:var(--input); background:var(--background); }
-.series-check { flex:0 0 12px; color:var(--teal); font-weight:700; text-align:center; }
+.series-check { flex:0 0 11px; font-weight:700; text-align:center; }
 .plot-series button[aria-pressed=false] .series-check { visibility:hidden; }
-.plot-series .legend-line { flex-shrink:0; }
+.series-swatch { display:grid; place-items:center; flex:none; padding:3px; border-radius:3px; background:var(--surface); }
 .source-message { margin:0 0 12px; color:#75500e; font-size:13px; line-height:1.6; }
-.plot-head { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
-.plot-head>span { font-size:12px; color:var(--muted); }
+.plot-head { display:flex; align-items:center; flex-wrap:wrap; gap:6px 11px; margin-bottom:10px; }
+.plot-head>span { min-inline-size:5em; font-size:12px; color:var(--muted); }
 .plot-controls button { min-height:30px; }
 .plot-legend { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; margin-top:6px; font-size:12px; color:var(--muted); }
 .plot-legend>span,.band-control,.band-control label { display:inline-flex; align-items:center; }
@@ -135,7 +138,8 @@ input[type=range]::-moz-range-thumb { width:11px; height:11px; border:1px solid 
 .legend-line.hybrid { border-top-style:solid; border-color:var(--gold); }
 .legend-line.measured { border-top:3px dotted var(--measured); }
 .legend-band { width:14px; height:9px; border-radius:2px; opacity:.24; margin-right:6px; }
-.legend-measure { width:9px; height:9px; border-radius:50%; background:#344d45; margin-right:6px; }
+.legend-measure { width:9px; height:9px; border-radius:50%; background:var(--measured); margin-right:6px; }
+#plot { border:2px solid #89a59a; border-radius:6px; padding:3px; }
 #plot svg { display:block; width:100%; height:auto; }
 .plot-footer,.view-tools {
   display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
@@ -155,6 +159,7 @@ input[type=range]::-moz-range-thumb { width:11px; height:11px; border:1px solid 
 .metric { white-space:nowrap; }
 .metric output { font-size:38px; font-weight:700; font-variant-numeric:tabular-nums; }
 .metric span { font-size:14px; }
+#physics-note:empty { margin:0; }
 .note { margin:8px 0 0; color:var(--muted); font-size:12px; line-height:1.65; }
 .data-card { margin-top:14px; }
 .data-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -197,8 +202,8 @@ td:last-child { text-align:right; }
   .predictions>div:first-child { grid-column:1/-1; }
   .predictions strong { font-size:clamp(22px,7vw,30px); }
   .prediction-label { font-size:13px; }
-  .plot-series button { padding-inline:7px; font-size:12px; }
-  .plot-series .legend-line { width:18px; }
+  .plot-series button { padding-inline:5px; }
+  .plot-series .legend-line { width:16px; }
   .plot-controls button { font-size:12px; }
   .plot-legend { gap:6px 10px; font-size:11px; }
   .data-heading { align-items:flex-start; }
@@ -213,6 +218,10 @@ td:last-child { text-align:right; }
   .readout p { font-size:12px; }
   .metric output { font-size:29px; }
   .metric span { font-size:12px; }
+}
+@media(max-width:460px) {
+  .plot-series button { display:grid; grid-template-columns:repeat(2,auto); place-content:center; place-items:center; gap:3px; min-width:0; padding-block:5px; }
+  .plot-series .series-name { grid-column:1/-1; text-align:center; white-space:normal; }
 }
 
 </style>
@@ -232,29 +241,29 @@ td:last-child { text-align:right; }
 </section>
 <section id="learning" class="learning" aria-labelledby="prediction-heading" hidden>
 <input id="training-size" type="hidden" value="100"><input id="deep-epochs" type="hidden" value="400">
-<div class="predictions"><div><div class="prediction-label"><span class="legend-dot" aria-hidden="true"></span>計算データで学習</div><div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim" class="sr-only"></small><small>計算データからの基準値</small></div></div><div><div class="prediction-label"><span class="legend-dot gold" aria-hidden="true"></span><span id="prediction-label">計算＋実測データで補正</span></div><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><div class="prediction-label"><span class="legend-dot measured-only" aria-hidden="true"></span>実測データで学習</div><div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
-<section class="plot-panel" aria-labelledby="plot-title"><h3 id="plot-title">羽根の先端幅と予測風速</h3><p id="plot-context"></p>
-<div id="plot-series" class="plot-series" role="group" aria-label="表示する予測">
-<button type="button" value="sim" aria-pressed="true"><span class="series-check" aria-hidden="true">✓</span><i class="legend-line" aria-hidden="true"></i>計算データで学習</button>
-<button type="button" value="hybrid" aria-pressed="true" aria-disabled="true" aria-describedby="prediction-source-message"><span class="series-check" aria-hidden="true">✓</span><i class="legend-line hybrid" aria-hidden="true"></i>計算＋実測データで補正</button>
-<button type="button" value="measured" aria-pressed="false" aria-disabled="true" aria-describedby="prediction-source-message"><span class="series-check" aria-hidden="true">✓</span><i class="legend-line measured" aria-hidden="true"></i>実測データで学習</button>
-</div>
+<div class="predictions"><div><div class="prediction-label"><span class="legend-dot" aria-hidden="true"></span>シミュレーション結果で学習</div><div class="prediction-value"><strong id="gp-sim">—</strong><small id="int-sim"></small></div></div><div><div class="prediction-label"><span class="legend-dot gold" aria-hidden="true"></span><span id="prediction-label">シミュレーション＋実測で補正</span></div><div class="prediction-value"><strong id="gp-real">—</strong><small id="int-real">実測値を追加してください。</small></div></div><div><div class="prediction-label"><span class="legend-dot measured-only" aria-hidden="true"></span>実測データで学習</div><div class="prediction-value"><strong id="gp-measured">—</strong><small id="int-measured">実測値を追加してください。</small></div></div></div>
+<section class="plot-panel" aria-labelledby="plot-title"><div class="plot-heading"><h3 id="plot-title">羽根の先端幅と予測風速</h3><p id="plot-context"></p></div>
+<div class="plot-head"><span id="plot-series-label">学習データ</span><div id="plot-series" class="plot-controls plot-series" role="group" aria-labelledby="plot-series-label">
+<button type="button" value="sim" aria-pressed="true"><span class="series-check" aria-hidden="true">✓</span><span class="series-swatch" aria-hidden="true"><i class="legend-line" aria-hidden="true"></i></span><span class="series-name">シミュレーション</span></button>
+<button type="button" value="hybrid" aria-pressed="true" aria-disabled="true" aria-describedby="prediction-source-message"><span class="series-check" aria-hidden="true">✓</span><span class="series-swatch" aria-hidden="true"><i class="legend-line hybrid" aria-hidden="true"></i></span><span class="series-name">シミュレーション＋実測</span></button>
+<button type="button" value="measured" aria-pressed="false" aria-disabled="true" aria-describedby="prediction-source-message"><span class="series-check" aria-hidden="true">✓</span><span class="series-swatch" aria-hidden="true"><i class="legend-line measured" aria-hidden="true"></i></span><span class="series-name">実測</span></button>
+</div></div>
 <p id="prediction-source-message" class="source-message" role="alert" hidden>実測した風速を入力し、「実測値で学習する」のボタンを押してください。</p>
 <div class="plot-head"><span>横軸</span><div id="plot-axis" class="plot-controls" role="group" aria-label="グラフの横軸"><button type="button" data-axis="width" aria-pressed="true">羽根の先端幅</button><button type="button" data-axis="pitch" aria-pressed="false">ピッチ角</button><button type="button" data-axis="count" aria-pressed="false">羽根枚数</button></div></div>
 <div id="plot"></div>
 <div class="plot-legend">
 <div class="band-control"><label for="plot-band"><i id="plot-band-key" class="legend-band" aria-hidden="true"></i>予測の幅（目安）</label><select id="plot-band" disabled>
-<option value="" hidden>表示できる予測がありません</option><option value="sim">計算データで学習</option><option value="hybrid">計算＋実測データで補正</option><option value="measured">実測データで学習</option>
+<option value="" hidden>表示できる予測がありません</option><option value="sim">シミュレーション</option><option value="hybrid">シミュレーション＋実測</option><option value="measured">実測</option>
 </select></div><span id="plot-measure-key" hidden><i class="legend-measure" aria-hidden="true"></i>実測値</span></div>
 <div class="plot-footer"><span id="plot-unit"></span><span id="plot-design"></span></div></section><p class="note" id="sim-error" role="alert" hidden></p></section>
 <div class="design-column"><aside class="card controls"><div class="design-heading"><h2>羽根の設計</h2><button id="reset" class="quiet">初期値に戻す</button></div><div id="controls"></div></aside>
 <section id="stl-entry" class="card stl-export-panel" aria-label="STL出力"><div class="stl-export"><h3>羽根の出力</h3><button class="primary" id="export-stl">STLをダウンロード</button><small>羽根とハブを出力（mm）</small></div><p id="stl-status" class="note" role="status"></p><p id="stl-error" role="alert"></p></section>
 <section id="measurement-entry" class="card measurement-entry" aria-label="実測風速の入力" hidden>
-<h3>実測値を追加</h3>
-<p class="measurement-context">前面ガード外面から軸上50 mm</p>
-<label for="measured-speed">実測風速（m/s）</label>
+<h3><label for="measured-speed">実測風速（m/s）</label></h3>
+<div class="measurement-input">
 <input id="measured-speed" type="number" inputmode="decimal" min="0" step="any" placeholder="例 1.8">
 <button class="primary" id="train">実測値で学習する</button>
+</div>
 <p class="sr-only" id="train-status" role="status"></p>
 <p id="quick-error" role="alert"></p>
 </section></div>
@@ -8455,10 +8464,11 @@ return globalThis.FanStlRuntime;})().catch(error=>{ready=null;throw error;});ret
 "use strict";
 const $ = id => document.getElementById(id);
 const plotChoices = [...$("plot-series").querySelectorAll("button")];
+const sourceMessage = $("prediction-source-message");
 const plotStyles = {
     sim: {color:"#006f60", dash:"7 6"},
     hybrid: {color:"#a45c03"},
-    measured: {color:"#67508b", dash:"1 6"}
+    measured: {color:"#1d4ed8", dash:"1 6"}
 };
 let preferredBand = "hybrid";
 const fields = [
@@ -8522,11 +8532,7 @@ function signalResult(key, result) {
     lastResult = result;
     currentKey = key;
     $("velocity").value = fmt(result.speed);
-    const notes = [];
-    if (Number.isFinite(result.distanceMm))
-        notes.push("羽根の回転面から検出部まで " + fmt(result.distanceMm, 1) + " mm。");
-    notes.push(result.eligible ? "ガードの影響と距離による減衰を含む簡易推定です。" : (result.reason || "この条件は学習に使用できません。"));
-    $("physics-note").textContent = notes.join(" ");
+    $("physics-note").textContent = result.eligible ? "" : (result.reason || "この条件は学習に使用できません。");
 }
 function runSimulation(id, key, inputs) {
     const { width, pitch, count } = inputs;
@@ -8593,7 +8599,7 @@ function scheduleSimulation() {
     currentKey = "";
     lastResult = null;
     $("velocity").value = "…";
-    $("physics-note").textContent = "ガード付きの風速を計算しています。";
+    $("physics-note").textContent = "";
     const inputs = { ...design };
     timer = setTimeout(() => runSimulation(id, key, inputs), 100);
 }
@@ -8653,7 +8659,7 @@ function activateModels() {
         if (hasMeasurements) choice.removeAttribute("aria-describedby");
         else choice.setAttribute("aria-describedby", "prediction-source-message");
     }
-    if (hasMeasurements) $("prediction-source-message").hidden = true;
+    if (hasMeasurements) sourceMessage.hidden = true;
     let correction;
     if (learningMethod === "ridge") {
         simModel = ridgeModels.baseline;
@@ -8796,7 +8802,7 @@ function drawPlot() {
     const band = series.find(item => item.key === bandKey);
     const bounds = band ? band.points.map(interval) : [];
     const matchesSlice = row => fixed.every(field => row[field.key] === design[field.key]);
-    const observed = fittedRows.filter(matchesSlice).map(row => ({...row, kind:"measured", color:"#344d45", radius:5.5}));
+    const observed = fittedRows.filter(matchesSlice).map(row => ({...row, kind:"measured", color:plotStyles.measured.color, radius:5.5}));
     const samples = visible.includes("sim") ? trainingDesigns.filter(matchesSlice) : [];
     const dots = samples.map(row => ({...row, kind:"sim", color:plotStyles.sim.color, radius:4})).concat(observed);
     $("plot-measure-key").hidden = !observed.length;
@@ -9003,10 +9009,17 @@ for (const button of $("learning-method").querySelectorAll("button")) {
         else { activateModels(); trainDeepModels(); }
     };
 }
+document.addEventListener("click", event => {
+    if (!event.target.closest("#plot-series button[aria-disabled=true]")) sourceMessage.hidden = true;
+}, true);
+document.addEventListener("input", () => { sourceMessage.hidden = true; });
+document.addEventListener("keydown", event => {
+    if (event.key === "Tab" || event.key === "Escape") sourceMessage.hidden = true;
+});
 for (const choice of plotChoices) {
     choice.onclick = () => {
         if (choice.getAttribute("aria-disabled") === "true") {
-            $("prediction-source-message").hidden = false;
+            sourceMessage.hidden = false;
             return;
         }
         choice.setAttribute("aria-pressed", String(choice.getAttribute("aria-pressed") !== "true"));
